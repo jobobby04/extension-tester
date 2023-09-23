@@ -111,7 +111,7 @@ private fun showNovel(ext: IExtension, novelURL: String) {
 
 @ExperimentalTime
 @Suppress("ConstantConditionIf")
-private fun showListing(ext: IExtension, novels: Array<Novel.Listing>) {
+private fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	if (PRINT_LISTINGS) {
 		println("$CPURPLE[")
 		print(novels.joinToString(", ") { it.toString() })

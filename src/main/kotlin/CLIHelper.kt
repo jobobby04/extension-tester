@@ -26,6 +26,7 @@ import Config.PRINT_NOVEL_STATS
 import Config.PRINT_PASSAGES
 import Config.PRINT_REPO_INDEX
 import Config.REPEAT
+import Config.SEARCH_VALUE
 import Config.SOURCES
 import Config.SPECIFIC_CHAPTER
 import Config.SPECIFIC_NOVEL
@@ -57,6 +58,7 @@ private const val ARGUMENT_PRINT_METADATA = "--print-meta"
 private const val ARGUMENT_REPEAT = "--repeat"
 private const val ARGUMENT_TARGET_NOVEL = "--target-novel"
 private const val ARGUMENT_TARGET_CHAPTER = "--target-chapter"
+private const val ARGUMENT_TARGET_QUERY = "--target-query"
 private const val ARGUMENT_VERSION = "--version"
 private const val ARGUMENT_CI = "--ci"
 private const val ARGUMENT_HEADERS = "--headers"
@@ -96,6 +98,7 @@ fun printHelp() {
 	println("\t$ARGUMENT_REPEAT:\n\t\tRepeat a result, as sometimes there is an obscure error with reruns")
 	println("\t$ARGUMENT_TARGET_NOVEL:\n\t\tTarget a specific novel")
 	println("\t$ARGUMENT_TARGET_CHAPTER:\n\t\tTarget a specific chapter of a specific novel")
+	println("\t$ARGUMENT_TARGET_QUERY:\n\t\tTarget a specific query")
 	println("\t$ARGUMENT_CI:\n\t\tRun in CI mode, modifies $ARGUMENT_PRINT_INDEX")
 	println("\t$ARGUMENT_HEADERS:\n\t\tPath to a headers file to read from")
 	println("\t$ARGUMENT_USER_AGENT:\n\t\tEasily provide a User Agent to use")
@@ -232,6 +235,21 @@ fun parseConfig(args: Array<String>) {
 					}
 				} else {
 					printErrorln("$ARGUMENT_TARGET_CHAPTER requires a chapter #")
+					quit()
+				}
+			}
+
+			ARGUMENT_TARGET_QUERY -> {
+				if (argumentStack.isNotEmpty()) {
+					val query = argumentStack.pop()
+					if (query != null) {
+						SEARCH_VALUE = query
+					} else {
+						printErrorln("$ARGUMENT_TARGET_QUERY has not been provided a valid query")
+						quit()
+					}
+				} else {
+					printErrorln("$ARGUMENT_TARGET_QUERY requires a query")
 					quit()
 				}
 			}

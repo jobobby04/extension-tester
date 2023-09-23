@@ -127,19 +127,25 @@ private fun showListing(ext: IExtension, novels: Array<Novel.Listing>) {
 
 	println()
 
+	if (novels.isEmpty())
+		return
+
 	var selectedNovel = 0
 	println(novels[selectedNovel].link)
 	var novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novels[selectedNovel].link, true)
 	}
 
-	while (novel.chapters.isEmpty()) {
+	while (novel.chapters.isEmpty() && selectedNovel < novels.lastIndex) {
 		println("$CRED Chapters are empty, trying next novel $CRESET")
 		selectedNovel++
 		novel = outputTimedValue("ext.parseNovel") {
 			ext.parseNovel(novels[selectedNovel].link, true)
 		}
 	}
+
+	if (novel.chapters.isEmpty())
+		return
 
 	if (PRINT_NOVELS)
 		println(novel)

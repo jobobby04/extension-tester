@@ -18,6 +18,7 @@
 
 import Config.CI_MODE
 import Config.DIRECTORY
+import Config.FILTERS
 import Config.PRINT_LISTINGS
 import Config.PRINT_LIST_STATS
 import Config.PRINT_METADATA
@@ -488,6 +489,46 @@ fun main(args: Array<String>) {
 
 					if (extension.hasSearch) {
 						println("\n-------- Search --------")
+						val filters = extension.searchFiltersModel.associateBy { it.id }
+						FILTERS.forEach { (id, state) ->
+							val filter = filters.getOrElse(id) { null }
+							when (filter) {
+								is Filter.FList,
+								is Filter.Group<*> -> {
+									state.forEach { (subId, state) ->
+										if (subId != null) {
+											val groupFilters = (filter as? Filter.Group<*>)?.filters
+												?: (filter as? Filter.FList)?.filters.orEmpty()
+											val subFilter = groupFilters.getOrElse(subId) { null }
+											when (subFilter) {
+												is Filter.Checkbox -> subFilter.state = state.toBooleanStrict()
+												is Filter.Dropdown -> subFilter.state = state.toInt()
+												is Filter.Password -> subFilter.state = state
+												is Filter.RadioGroup -> subFilter.state = state.toInt()
+												is Filter.Switch -> subFilter.state = state.toBooleanStrict()
+												is Filter.Text -> subFilter.state = state
+												is Filter.TriState -> subFilter.state = state.toInt()
+												is Filter.FList,
+												is Filter.Group<*>,
+												is Filter.Header,
+												Filter.Separator,
+												null -> Unit
+											}
+										}
+									}
+								}
+								is Filter.Checkbox -> filter.state = state[null]!!.toBooleanStrict()
+								is Filter.Dropdown -> filter.state = state[null]!!.toInt()
+								is Filter.Password -> filter.state = state[null]!!
+								is Filter.RadioGroup -> filter.state = state[null]!!.toInt()
+								is Filter.Switch -> filter.state = state[null]!!.toBooleanStrict()
+								is Filter.Text -> filter.state = state[null]!!
+								is Filter.TriState -> filter.state = state[null]!!.toInt()
+								is Filter.Header,
+								Filter.Separator,
+								null -> Unit
+							}
+						}
 						showListing(
 							extension,
 							outputTimedValue("ext.search") {
@@ -495,6 +536,7 @@ fun main(args: Array<String>) {
 									HashMap(searchFiltersModel).apply {
 										set(QUERY_INDEX, SEARCH_VALUE)
 										set(PAGE_INDEX, extension.startIndex)
+										putAll(filters)
 									}
 								)
 							}
@@ -507,6 +549,7 @@ fun main(args: Array<String>) {
 										HashMap(searchFiltersModel).apply {
 											set(QUERY_INDEX, SEARCH_VALUE)
 											set(PAGE_INDEX, extension.startIndex + 1)
+											putAll(filters)
 										}
 									)
 								}

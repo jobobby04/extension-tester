@@ -44,6 +44,8 @@ object Config {
 	var SPECIFIC_NOVEL_URL = "/"
 	var SPECIFIC_CHAPTER = 0
 
+	var FILTERS = emptyMap<Int, Map<Int?, String>>()
+
 	/** Replace with the directory of the extensions you want to use*/
 	var DIRECTORY = "./"
 

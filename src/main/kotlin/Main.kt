@@ -44,6 +44,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
@@ -215,6 +218,22 @@ fun printErrorln(message: String) {
 	println("$CRED$message$CRESET")
 }
 
+object Cookies : CookieJar {
+	private val cookieJar = mutableMapOf<String, MutableList<Cookie>>()
+
+	override fun loadForRequest(url: HttpUrl): List<Cookie> {
+		return cookieJar[url.host].orEmpty()
+	}
+
+	override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+		val list = cookieJar.getOrPut(url.host) { mutableListOf() }
+		list.removeAll { cookie ->
+			cookies.any { it.name == cookie.name }
+		}
+		list.addAll(cookies)
+	}
+}
+
 /**
  * Establish
  */
@@ -228,7 +247,7 @@ fun setupLibs() {
 			)
 		}
 	}
-	httpClient = OkHttpClient.Builder().addInterceptor {
+	httpClient = OkHttpClient.Builder().cookieJar(Cookies).addInterceptor {
 		outputTimedValue("Time till response") {
 			it.proceed(it.request().also { request ->
 				println(request.url.toUrl().toString())

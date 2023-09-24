@@ -529,6 +529,11 @@ fun main(args: Array<String>) {
 								null -> Unit
 							}
 						}
+						val filtersChanged = filters.mapValues { (_, filter) ->
+							(filter as? Filter.Group<*>)?.filters?.map { it.state }
+								?: (filter as? Filter.FList)?.filters?.map { it.state }
+								?: filter.state
+						}
 						showListing(
 							extension,
 							outputTimedValue("ext.search") {
@@ -536,7 +541,7 @@ fun main(args: Array<String>) {
 									HashMap(searchFiltersModel).apply {
 										set(QUERY_INDEX, SEARCH_VALUE)
 										set(PAGE_INDEX, extension.startIndex)
-										putAll(filters)
+										putAll(filtersChanged)
 									}
 								)
 							}
@@ -549,7 +554,7 @@ fun main(args: Array<String>) {
 										HashMap(searchFiltersModel).apply {
 											set(QUERY_INDEX, SEARCH_VALUE)
 											set(PAGE_INDEX, extension.startIndex + 1)
-											putAll(filters)
+											putAll(filtersChanged)
 										}
 									)
 								}

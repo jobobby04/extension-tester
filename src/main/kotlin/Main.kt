@@ -18,6 +18,7 @@
 
 import Config.CI_MODE
 import Config.DIRECTORY
+import Config.FILTERS
 import Config.PRINT_LISTINGS
 import Config.PRINT_LIST_STATS
 import Config.PRINT_METADATA
@@ -44,6 +45,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
@@ -107,7 +111,7 @@ private fun showNovel(ext: IExtension, novelURL: String) {
 
 @ExperimentalTime
 @Suppress("ConstantConditionIf")
-private fun showListing(ext: IExtension, novels: Array<Novel.Listing>) {
+private fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	if (PRINT_LISTINGS) {
 		println("$CPURPLE[")
 		print(novels.joinToString(", ") { it.toString() })
@@ -124,19 +128,25 @@ private fun showListing(ext: IExtension, novels: Array<Novel.Listing>) {
 
 	println()
 
+	if (novels.isEmpty())
+		return
+
 	var selectedNovel = 0
 	println(novels[selectedNovel].link)
 	var novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novels[selectedNovel].link, true)
 	}
 
-	while (novel.chapters.isEmpty()) {
+	while (novel.chapters.isEmpty() && selectedNovel < novels.lastIndex) {
 		println("$CRED Chapters are empty, trying next novel $CRESET")
 		selectedNovel++
 		novel = outputTimedValue("ext.parseNovel") {
 			ext.parseNovel(novels[selectedNovel].link, true)
 		}
 	}
+
+	if (novel.chapters.isEmpty())
+		return
 
 	if (PRINT_NOVELS)
 		println(novel)
@@ -215,6 +225,22 @@ fun printErrorln(message: String) {
 	println("$CRED$message$CRESET")
 }
 
+object Cookies : CookieJar {
+	private val cookieJar = mutableMapOf<String, MutableList<Cookie>>()
+
+	override fun loadForRequest(url: HttpUrl): List<Cookie> {
+		return cookieJar[url.host].orEmpty()
+	}
+
+	override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+		val list = cookieJar.getOrPut(url.host) { mutableListOf() }
+		list.removeAll { cookie ->
+			cookies.any { it.name == cookie.name }
+		}
+		list.addAll(cookies)
+	}
+}
+
 /**
  * Establish
  */
@@ -228,7 +254,7 @@ fun setupLibs() {
 			)
 		}
 	}
-	httpClient = OkHttpClient.Builder().addInterceptor {
+	httpClient = OkHttpClient.Builder().cookieJar(Cookies).addInterceptor {
 		outputTimedValue("Time till response") {
 			it.proceed(it.request().also { request ->
 				println(request.url.toUrl().toString())
@@ -463,6 +489,51 @@ fun main(args: Array<String>) {
 
 					if (extension.hasSearch) {
 						println("\n-------- Search --------")
+						val filters = extension.searchFiltersModel.associateBy { it.id }
+						FILTERS.forEach { (id, state) ->
+							val filter = filters.getOrElse(id) { null }
+							when (filter) {
+								is Filter.FList,
+								is Filter.Group<*> -> {
+									state.forEach { (subId, state) ->
+										if (subId != null) {
+											val groupFilters = (filter as? Filter.Group<*>)?.filters
+												?: (filter as? Filter.FList)?.filters.orEmpty()
+											val subFilter = groupFilters.getOrElse(subId) { null }
+											when (subFilter) {
+												is Filter.Checkbox -> subFilter.state = state.toBooleanStrict()
+												is Filter.Dropdown -> subFilter.state = state.toInt()
+												is Filter.Password -> subFilter.state = state
+												is Filter.RadioGroup -> subFilter.state = state.toInt()
+												is Filter.Switch -> subFilter.state = state.toBooleanStrict()
+												is Filter.Text -> subFilter.state = state
+												is Filter.TriState -> subFilter.state = state.toInt()
+												is Filter.FList,
+												is Filter.Group<*>,
+												is Filter.Header,
+												Filter.Separator,
+												null -> Unit
+											}
+										}
+									}
+								}
+								is Filter.Checkbox -> filter.state = state[null]!!.toBooleanStrict()
+								is Filter.Dropdown -> filter.state = state[null]!!.toInt()
+								is Filter.Password -> filter.state = state[null]!!
+								is Filter.RadioGroup -> filter.state = state[null]!!.toInt()
+								is Filter.Switch -> filter.state = state[null]!!.toBooleanStrict()
+								is Filter.Text -> filter.state = state[null]!!
+								is Filter.TriState -> filter.state = state[null]!!.toInt()
+								is Filter.Header,
+								Filter.Separator,
+								null -> Unit
+							}
+						}
+						val filtersChanged = filters.mapValues { (_, filter) ->
+							(filter as? Filter.Group<*>)?.filters?.map { it.state }
+								?: (filter as? Filter.FList)?.filters?.map { it.state }
+								?: filter.state
+						}
 						showListing(
 							extension,
 							outputTimedValue("ext.search") {
@@ -470,6 +541,7 @@ fun main(args: Array<String>) {
 									HashMap(searchFiltersModel).apply {
 										set(QUERY_INDEX, SEARCH_VALUE)
 										set(PAGE_INDEX, extension.startIndex)
+										putAll(filtersChanged)
 									}
 								)
 							}
@@ -482,6 +554,7 @@ fun main(args: Array<String>) {
 										HashMap(searchFiltersModel).apply {
 											set(QUERY_INDEX, SEARCH_VALUE)
 											set(PAGE_INDEX, extension.startIndex + 1)
+											putAll(filtersChanged)
 										}
 									)
 								}

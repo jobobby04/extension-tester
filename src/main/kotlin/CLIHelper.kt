@@ -18,6 +18,7 @@
 
 import Config.CI_MODE
 import Config.DIRECTORY
+import Config.FILTERS
 import Config.PRINT_LISTINGS
 import Config.PRINT_LIST_STATS
 import Config.PRINT_METADATA
@@ -26,6 +27,7 @@ import Config.PRINT_NOVEL_STATS
 import Config.PRINT_PASSAGES
 import Config.PRINT_REPO_INDEX
 import Config.REPEAT
+import Config.SEARCH_VALUE
 import Config.SOURCES
 import Config.SPECIFIC_CHAPTER
 import Config.SPECIFIC_NOVEL
@@ -57,6 +59,8 @@ private const val ARGUMENT_PRINT_METADATA = "--print-meta"
 private const val ARGUMENT_REPEAT = "--repeat"
 private const val ARGUMENT_TARGET_NOVEL = "--target-novel"
 private const val ARGUMENT_TARGET_CHAPTER = "--target-chapter"
+private const val ARGUMENT_TARGET_QUERY = "--target-query"
+private const val ARGUMENT_MODIFY_FILTER = "--modify-filter"
 private const val ARGUMENT_VERSION = "--version"
 private const val ARGUMENT_CI = "--ci"
 private const val ARGUMENT_HEADERS = "--headers"
@@ -96,6 +100,8 @@ fun printHelp() {
 	println("\t$ARGUMENT_REPEAT:\n\t\tRepeat a result, as sometimes there is an obscure error with reruns")
 	println("\t$ARGUMENT_TARGET_NOVEL:\n\t\tTarget a specific novel")
 	println("\t$ARGUMENT_TARGET_CHAPTER:\n\t\tTarget a specific chapter of a specific novel")
+	println("\t$ARGUMENT_TARGET_QUERY:\n\t\tTarget a specific query")
+	println("\t$ARGUMENT_MODIFY_FILTER:\n\t\tModify x=y=z filter, with x being the filter, y being the state or subfilter id, and an optional z state when y is a subfilter")
 	println("\t$ARGUMENT_CI:\n\t\tRun in CI mode, modifies $ARGUMENT_PRINT_INDEX")
 	println("\t$ARGUMENT_HEADERS:\n\t\tPath to a headers file to read from")
 	println("\t$ARGUMENT_USER_AGENT:\n\t\tEasily provide a User Agent to use")
@@ -232,6 +238,65 @@ fun parseConfig(args: Array<String>) {
 					}
 				} else {
 					printErrorln("$ARGUMENT_TARGET_CHAPTER requires a chapter #")
+					quit()
+				}
+			}
+
+			ARGUMENT_TARGET_QUERY -> {
+				if (argumentStack.isNotEmpty()) {
+					val query = argumentStack.pop()
+					if (query != null) {
+						SEARCH_VALUE = query
+					} else {
+						printErrorln("$ARGUMENT_TARGET_QUERY has not been provided a valid query")
+						quit()
+					}
+				} else {
+					printErrorln("$ARGUMENT_TARGET_QUERY requires a query")
+					quit()
+				}
+			}
+
+			ARGUMENT_MODIFY_FILTER -> {
+				if (argumentStack.isNotEmpty()) {
+					val filterChange = argumentStack.pop()?.split('=')
+					if (filterChange != null) {
+						val filterId = filterChange.getOrNull(0)?.toIntOrNull()
+						if (filterId != null) {
+							val filterSub = filterChange.getOrNull(1)
+							if (filterSub == null) {
+								printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid sub filter id or state")
+								quit()
+							} else if (filterChange.size == 2) {
+								FILTERS = FILTERS.plus(filterId to FILTERS[filterId].orEmpty().plus(null to filterSub))
+							} else if (filterChange.size == 3) {
+								val subFilterId = filterSub.toIntOrNull()
+								if (subFilterId != null) {
+									val filterFinal = filterChange.getOrNull(2)
+									if (filterFinal != null) {
+										FILTERS = FILTERS.plus(filterId to FILTERS[filterId].orEmpty().plus(subFilterId to filterSub))
+									} else {
+										printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid filter state")
+										quit()
+									}
+								} else {
+									printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid sub filter id")
+									quit()
+								}
+							} else {
+								printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid filter")
+								quit()
+							}
+						} else {
+							printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid filter id")
+							quit()
+						}
+					} else {
+						printErrorln("$ARGUMENT_MODIFY_FILTER has not been provided a valid filter change")
+						quit()
+					}
+				} else {
+					printErrorln("$ARGUMENT_MODIFY_FILTER requires a filter change")
 					quit()
 				}
 			}

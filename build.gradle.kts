@@ -13,7 +13,9 @@ repositories {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_11
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(11)
+	}
 }
 
 buildConfig {

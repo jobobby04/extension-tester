@@ -28,7 +28,7 @@ dependencies {
 	implementation("com.gitlab.shosetsuorg:kotlin-lib:3c204042a96efd691478820042b61625c0bc0f32")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
-	implementation("org.jsoup:jsoup:1.15.3")
+	implementation("org.jsoup:jsoup:1.16.2")
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	implementation("org.luaj:luaj-jse:3.0.1")
 

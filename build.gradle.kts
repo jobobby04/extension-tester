@@ -29,7 +29,7 @@ dependencies {
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
 	implementation("org.jsoup:jsoup:1.15.3")
-	implementation("com.squareup.okhttp3:okhttp:4.10.0")
+	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	implementation("org.luaj:luaj-jse:3.0.1")
 
 	implementation(kotlin("reflect"))

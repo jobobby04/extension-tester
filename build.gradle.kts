@@ -26,6 +26,7 @@ dependencies {
 	testImplementation(kotlin("test"))
 
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+	implementation("com.github.ajalt.clikt:clikt:4.2.2") // for CLI
 
 	implementation("com.gitlab.shosetsuorg:kotlin-lib:11a3569bc32a47d8026901925152cfec1fdf6b5c")
 	implementation(kotlin("stdlib"))

@@ -30,7 +30,6 @@ import Config.REPEAT
 import Config.SEARCH_VALUE
 import Config.SOURCES
 import Config.SPECIFIC_CHAPTER
-import Config.SPECIFIC_NOVEL
 import Config.SPECIFIC_NOVEL_URL
 import Config.VALIDATE_INDEX
 import Config.VALIDATE_METADATA
@@ -266,8 +265,7 @@ fun setupLibs() {
 @OptIn(ExperimentalSerializationApi::class)
 @ExperimentalTime
 fun main(args: Array<String>) {
-
-	parseConfig(args)
+	Config.main(args)
 
 	setupLibs()
 
@@ -377,11 +375,10 @@ fun main(args: Array<String>) {
 						}
 					}
 
-					if (SPECIFIC_NOVEL) {
+					if (SPECIFIC_NOVEL_URL.isNotBlank()) {
 						showNovel(extension, SPECIFIC_NOVEL_URL)
 						return@run
 					}
-
 
 					val settingsModel: Map<Int, *> =
 						extension.settingsModel.toList().also {
@@ -492,38 +489,18 @@ fun main(args: Array<String>) {
 						val filters = extension.searchFiltersModel.associateBy { it.id }
 						FILTERS.forEach { (id, state) ->
 							val filter = filters.getOrElse(id) { null }
+
 							when (filter) {
+								is Filter.Checkbox -> filter.state = state.toBooleanStrict()
+								is Filter.Dropdown -> filter.state = state.toInt()
+								is Filter.Password -> filter.state = state
+								is Filter.RadioGroup -> filter.state = state.toInt()
+								is Filter.Switch -> filter.state = state.toBooleanStrict()
+								is Filter.Text -> filter.state = state
+								is Filter.TriState -> filter.state = state.toInt()
+
 								is Filter.FList,
-								is Filter.Group<*> -> {
-									state.forEach { (subId, state) ->
-										if (subId != null) {
-											val groupFilters = (filter as? Filter.Group<*>)?.filters
-												?: (filter as? Filter.FList)?.filters.orEmpty()
-											val subFilter = groupFilters.getOrElse(subId) { null }
-											when (subFilter) {
-												is Filter.Checkbox -> subFilter.state = state.toBooleanStrict()
-												is Filter.Dropdown -> subFilter.state = state.toInt()
-												is Filter.Password -> subFilter.state = state
-												is Filter.RadioGroup -> subFilter.state = state.toInt()
-												is Filter.Switch -> subFilter.state = state.toBooleanStrict()
-												is Filter.Text -> subFilter.state = state
-												is Filter.TriState -> subFilter.state = state.toInt()
-												is Filter.FList,
-												is Filter.Group<*>,
-												is Filter.Header,
-												Filter.Separator,
-												null -> Unit
-											}
-										}
-									}
-								}
-								is Filter.Checkbox -> filter.state = state[null]!!.toBooleanStrict()
-								is Filter.Dropdown -> filter.state = state[null]!!.toInt()
-								is Filter.Password -> filter.state = state[null]!!
-								is Filter.RadioGroup -> filter.state = state[null]!!.toInt()
-								is Filter.Switch -> filter.state = state[null]!!.toBooleanStrict()
-								is Filter.Text -> filter.state = state[null]!!
-								is Filter.TriState -> filter.state = state[null]!!.toInt()
+								is Filter.Group<*>,
 								is Filter.Header,
 								Filter.Separator,
 								null -> Unit

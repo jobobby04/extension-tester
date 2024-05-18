@@ -28,6 +28,7 @@ import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.doomsdayrs.lib.extension_tester.BuildConfig
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -148,7 +149,7 @@ object Config : CliktCommand() {
 		ARGUMENT_USER_AGENT,
 		envvar = "EXTENSION_TESTER_USER_AGENT",
 		help = "Easily provide a User Agent to use"
-	).default("")
+	).default("ShosetsuExtensionTester/${BuildConfig.VERSION} Sorry for the spam!")
 
 	init {
 		completionOption()
@@ -190,11 +191,9 @@ object Config : CliktCommand() {
 			ShosetsuSharedLib.shosetsuHeaders = headers
 		}
 
-		if (userArgent.isNotBlank()) {
-			ShosetsuSharedLib.shosetsuHeaders = arrayOf(
-				"User-Agent" to userArgent
-			)
-		}
+		ShosetsuSharedLib.shosetsuHeaders = arrayOf(
+			"User-Agent" to userArgent
+		)
 
 		FILTERS = rawFilters.associate { rawFilter ->
 			val values = rawFilter.split("=")

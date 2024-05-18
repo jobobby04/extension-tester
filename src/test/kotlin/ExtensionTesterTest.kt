@@ -30,9 +30,9 @@ class ExtensionTesterTest {
 	fun testProgram() {
 		main(arrayOf(
 			"-r",
-			"../shosetsuorg.extensions/",
-			"../shosetsuorg.extensions/src/en/FastNovel.lua",
-			"--version"
+			"../extensions/",
+			"../extensions/src/en/NovelFull.lua",
+			"../extensions/src/en/BoxNovel.lua"
 		))
 	}
 }

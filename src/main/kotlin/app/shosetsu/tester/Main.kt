@@ -16,32 +16,25 @@ package app.shosetsu.tester/*
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import app.shosetsu.lib.Filter
+import app.shosetsu.lib.IExtension
+import app.shosetsu.lib.Novel
+import app.shosetsu.lib.ShosetsuSharedLib.httpClient
+import app.shosetsu.lib.json.RepoIndex
+import app.shosetsu.lib.lua.ShosetsuLuaLib
+import app.shosetsu.lib.lua.shosetsuGlobals
 import app.shosetsu.tester.Config.CI_MODE
 import app.shosetsu.tester.Config.DIRECTORY
-import app.shosetsu.tester.Config.FILTERS
 import app.shosetsu.tester.Config.PRINT_LISTINGS
 import app.shosetsu.tester.Config.PRINT_LIST_STATS
-import app.shosetsu.tester.Config.PRINT_METADATA
 import app.shosetsu.tester.Config.PRINT_NOVELS
 import app.shosetsu.tester.Config.PRINT_NOVEL_STATS
 import app.shosetsu.tester.Config.PRINT_PASSAGES
 import app.shosetsu.tester.Config.PRINT_REPO_INDEX
-import app.shosetsu.tester.Config.REPEAT
-import app.shosetsu.tester.Config.SEARCH_VALUE
 import app.shosetsu.tester.Config.SOURCES
 import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
-import app.shosetsu.tester.Config.SPECIFIC_NOVEL_URL
 import app.shosetsu.tester.Config.VALIDATE_INDEX
-import app.shosetsu.tester.Config.VALIDATE_METADATA
-import app.shosetsu.lib.*
-import app.shosetsu.lib.ExtensionType.LuaScript
-import app.shosetsu.lib.ShosetsuSharedLib.httpClient
-import app.shosetsu.lib.json.RepoIndex
-import app.shosetsu.lib.lua.LuaExtension
-import app.shosetsu.lib.lua.ShosetsuLuaLib
-import app.shosetsu.lib.lua.shosetsuGlobals
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.Cookie
@@ -50,7 +43,6 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -64,7 +56,7 @@ import kotlin.time.measureTimedValue
  * @author github.com/doomsdayrs; github.com/TechnoJo4
  */
 
-private val json = Json { prettyPrint = true }
+val json = Json { prettyPrint = true }
 
 private val globals = shosetsuGlobals()
 
@@ -78,7 +70,7 @@ private fun loadScript(file: File, source_pre: String = "ext"): LuaValue {
 }
 
 @ExperimentalTime
-private fun showNovel(ext: IExtension, novelURL: String) {
+fun showNovel(ext: IExtension, novelURL: String) {
 	val novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novelURL, true)
 	}
@@ -110,7 +102,7 @@ private fun showNovel(ext: IExtension, novelURL: String) {
 
 @ExperimentalTime
 @Suppress("ConstantConditionIf")
-private fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
+fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	if (PRINT_LISTINGS) {
 		println("$CPURPLE[")
 		print(novels.joinToString(", ") { it.toString() })
@@ -205,14 +197,14 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 }
 
 @ExperimentalTime
-private inline fun <T> outputTimedValue(jobName: String, block: () -> T): T {
+inline fun <T> outputTimedValue(jobName: String, block: () -> T): T {
 	return measureTimedValue(block).also {
 		printExecutionTime(jobName, it.duration)
 	}.value
 }
 
 @ExperimentalTime
-private fun printExecutionTime(job: String, time: Duration) {
+fun printExecutionTime(job: String, time: Duration) {
 	printExecutionTime(job, time.toDouble(DurationUnit.MILLISECONDS))
 }
 
@@ -359,190 +351,24 @@ fun main(args: Array<String>) {
 				exitProcess(0)
 			}
 
+			val failedExtensions = hashMapOf<String, Exception>()
+
 			run {
-				for (extensionPath in SOURCES) {
-					val extensionFile = File(extensionPath.first)
-					val repoExtension =
-						repoIndex.extensions.find {
-							it.fileName == extensionFile.nameWithoutExtension
-						}!!
-					println("\n\n========== $extensionPath ==========")
-
-
-					val extension = outputTimedValue("LuaExtension") {
-						when (extensionPath.second) {
-							LuaScript -> LuaExtension(extensionFile)
-						}
+				for (extensionInfo in SOURCES) {
+					try {
+						testExtension(repoIndex, extensionInfo)
+					} catch (e: Exception) {
+						failedExtensions[extensionInfo.first] = e
 					}
-
-					if (SPECIFIC_NOVEL_URL.isNotBlank()) {
-						showNovel(extension, SPECIFIC_NOVEL_URL)
-						return@run
-					}
-
-					val settingsModel: Map<Int, *> =
-						extension.settingsModel.toList().also {
-							println("Settings model:")
-							it.printOut()
-						}.mapify()
-					val searchFiltersModel: Map<Int, *> =
-						extension.searchFiltersModel.toList().also {
-							println("SearchFilters Model:")
-							it.printOut()
-						}.mapify()
-
-					println(CCYAN)
-					println("ID       : ${extension.formatterID}")
-					println("Name     : ${extension.name}")
-					println("BaseURL  : ${extension.baseURL}")
-					println("Image    : ${extension.imageURL}")
-					println("Settings : $settingsModel")
-					println("Filters  : $searchFiltersModel")
-					if (PRINT_METADATA)
-						println(
-							"MetaData : ${
-								json.encodeToString(extension.exMetaData)
-							}"
-						)
-					println(CRESET)
-
-					if (VALIDATE_METADATA) {
-						val metadata = extension.exMetaData
-						when {
-							extension.formatterID != metadata.id -> {
-								println("Extension id does not match metadata")
-								exitProcess(1)
-							}
-
-							repoExtension.version != metadata.version -> {
-								println("Metadata version does not match index")
-								exitProcess(1)
-							}
-
-							repoExtension.libVersion != metadata.libVersion -> {
-								println("Metadata lib version does not match index")
-								exitProcess(1)
-							}
-
-							else -> {
-								println("Metadata is valid")
-								if (CI_MODE) {
-									exitProcess(0)
-								}
-							}
-						}
-					}
-
-					if (CI_MODE && extension.hasCloudFlare) {
-						print("$CRED=== CLOUDFLARE: PLEASE TEST MANUALLY ===$CRESET")
-						continue
-					}
-
-					extension.listings.forEach { l ->
-						with(l) {
-							print("\n-------- Listing \"${name}\" ")
-							print(if (isIncrementing) "(incrementing)" else "")
-							println(" --------")
-
-							var novels = getListing(
-								HashMap(searchFiltersModel).apply {
-									this[PAGE_INDEX] =
-										if (isIncrementing) extension.startIndex else null
-
-								}
-							)
-
-							if (isIncrementing)
-								novels += getListing(HashMap(searchFiltersModel)
-									.apply {
-										this[PAGE_INDEX] = extension.startIndex + 1
-									})
-
-							if (REPEAT) {
-								novels = getListing(
-									HashMap(searchFiltersModel).apply {
-										this[PAGE_INDEX] =
-											if (isIncrementing) extension.startIndex else null
-
-									}
-								)
-
-								if (isIncrementing)
-									novels += getListing(HashMap(searchFiltersModel)
-										.apply {
-											this[PAGE_INDEX] = extension.startIndex + 1
-										})
-							}
-
-
-							showListing(extension, novels)
-							try {
-								MILLISECONDS.sleep(500)
-							} catch (e: InterruptedException) {
-								e.printStackTrace()
-							}
-						}
-					}
-
-					if (extension.hasSearch) {
-						println("\n-------- Search --------")
-						val filters = extension.searchFiltersModel.associateBy { it.id }
-						FILTERS.forEach { (id, state) ->
-							val filter = filters.getOrElse(id) { null }
-
-							when (filter) {
-								is Filter.Checkbox -> filter.state = state.toBooleanStrict()
-								is Filter.Dropdown -> filter.state = state.toInt()
-								is Filter.Password -> filter.state = state
-								is Filter.RadioGroup -> filter.state = state.toInt()
-								is Filter.Switch -> filter.state = state.toBooleanStrict()
-								is Filter.Text -> filter.state = state
-								is Filter.TriState -> filter.state = state.toInt()
-
-								is Filter.FList,
-								is Filter.Group<*>,
-								is Filter.Header,
-								Filter.Separator,
-								null -> Unit
-							}
-						}
-						val filtersChanged = filters.mapValues { (_, filter) ->
-							(filter as? Filter.Group<*>)?.filters?.map { it.state }
-								?: (filter as? Filter.FList)?.filters?.map { it.state }
-								?: filter.state
-						}
-						showListing(
-							extension,
-							outputTimedValue("ext.search") {
-								extension.search(
-									HashMap(searchFiltersModel).apply {
-										set(QUERY_INDEX, SEARCH_VALUE)
-										set(PAGE_INDEX, extension.startIndex)
-										putAll(filtersChanged)
-									}
-								)
-							}
-						)
-						if (extension.isSearchIncrementing) {
-							showListing(
-								extension,
-								outputTimedValue("ext.search") {
-									extension.search(
-										HashMap(searchFiltersModel).apply {
-											set(QUERY_INDEX, SEARCH_VALUE)
-											set(PAGE_INDEX, extension.startIndex + 1)
-											putAll(filtersChanged)
-										}
-									)
-								}
-							)
-						}
-					}
-
-					MILLISECONDS.sleep(500)
 				}
 			}
 
+			if (failedExtensions.isNotEmpty()) {
+				System.err.println("Failed extensions: ")
+				failedExtensions.forEach { info ->
+					System.err.println("(" + info.key + "): " + info.value.stackTraceToString())
+				}
+			}
 
 			println("\n\tTESTS COMPLETE")
 			exitProcess(0)

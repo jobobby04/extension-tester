@@ -139,8 +139,10 @@ object Config : CliktCommand() {
 		help = "Print version"
 	).flag(default = false)
 
-	private val headersFile by option(ARGUMENT_HEADERS, help = "Path to a headers file to read from")
-		.file(true, canBeDir = false, mustBeReadable = true)
+	private val headersFile by option(
+		ARGUMENT_HEADERS,
+		help = "Path to a headers file to read from"
+	).file(true, canBeDir = false, mustBeReadable = true)
 
 	private val userArgent by option(
 		ARGUMENT_USER_AGENT,

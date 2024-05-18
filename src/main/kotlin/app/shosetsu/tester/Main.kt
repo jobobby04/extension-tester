@@ -359,6 +359,7 @@ fun main(args: Array<String>) {
 						testExtension(repoIndex, extensionInfo)
 					} catch (e: Exception) {
 						failedExtensions[extensionInfo.first] = e
+						e.printStackTrace()
 					}
 				}
 			}

@@ -142,8 +142,11 @@ object Config : CliktCommand() {
 	private val headersFile by option(ARGUMENT_HEADERS, help = "Path to a headers file to read from")
 		.file(true, canBeDir = false, mustBeReadable = true)
 
-	private val userArgent by option(ARGUMENT_USER_AGENT, help = "Easily provide a User Agent to use")
-		.default("")
+	private val userArgent by option(
+		ARGUMENT_USER_AGENT,
+		envvar = "EXTENSION_TESTER_USER_AGENT",
+		help = "Easily provide a User Agent to use"
+	).default("")
 
 	init {
 		completionOption()

@@ -1,4 +1,4 @@
-/*
+package app.shosetsu.tester/*
  * Extension Tester: Test Shosetsu extensions
  * Copyright (C) 2022 Doomsdayrs
  *

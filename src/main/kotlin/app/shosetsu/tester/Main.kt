@@ -1,4 +1,4 @@
-/*
+package app.shosetsu.tester/*
  * Extension Tester: Test Shosetsu extensions
  * Copyright (C) 2022 Doomsdayrs
  *
@@ -16,23 +16,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import Config.CI_MODE
-import Config.DIRECTORY
-import Config.FILTERS
-import Config.PRINT_LISTINGS
-import Config.PRINT_LIST_STATS
-import Config.PRINT_METADATA
-import Config.PRINT_NOVELS
-import Config.PRINT_NOVEL_STATS
-import Config.PRINT_PASSAGES
-import Config.PRINT_REPO_INDEX
-import Config.REPEAT
-import Config.SEARCH_VALUE
-import Config.SOURCES
-import Config.SPECIFIC_CHAPTER
-import Config.SPECIFIC_NOVEL_URL
-import Config.VALIDATE_INDEX
-import Config.VALIDATE_METADATA
+import app.shosetsu.tester.Config.CI_MODE
+import app.shosetsu.tester.Config.DIRECTORY
+import app.shosetsu.tester.Config.FILTERS
+import app.shosetsu.tester.Config.PRINT_LISTINGS
+import app.shosetsu.tester.Config.PRINT_LIST_STATS
+import app.shosetsu.tester.Config.PRINT_METADATA
+import app.shosetsu.tester.Config.PRINT_NOVELS
+import app.shosetsu.tester.Config.PRINT_NOVEL_STATS
+import app.shosetsu.tester.Config.PRINT_PASSAGES
+import app.shosetsu.tester.Config.PRINT_REPO_INDEX
+import app.shosetsu.tester.Config.REPEAT
+import app.shosetsu.tester.Config.SEARCH_VALUE
+import app.shosetsu.tester.Config.SOURCES
+import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
+import app.shosetsu.tester.Config.SPECIFIC_NOVEL_URL
+import app.shosetsu.tester.Config.VALIDATE_INDEX
+import app.shosetsu.tester.Config.VALIDATE_METADATA
 import app.shosetsu.lib.*
 import app.shosetsu.lib.ExtensionType.LuaScript
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient

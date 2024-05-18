@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import app.shosetsu.tester.main
 import org.junit.Test
 import kotlin.time.ExperimentalTime
 

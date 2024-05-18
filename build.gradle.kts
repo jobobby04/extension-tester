@@ -43,7 +43,7 @@ tasks.test {
 }
 
 application {
-	mainClass.set("MainKt")
+	mainClass.set("app.shosetsu.tester.MainKt")
 }
 
 tasks.register<Jar>("assembleJar") {

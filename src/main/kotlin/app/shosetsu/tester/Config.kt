@@ -131,6 +131,11 @@ object Config : CliktCommand() {
 	var SOURCES: List<Pair<String, ExtensionType>> = listOf()
 		private set
 
+	private val skipExtensions by option(
+		"--skip",
+		help = "Specifies which extensions to skip, via their paths"
+	).file(true, canBeDir = false).multiple()
+
 	private val extensions by argument(help = "Specifies which extensions to test")
 		.file(true, canBeDir = false, mustBeReadable = true)
 		.multiple()
@@ -161,7 +166,7 @@ object Config : CliktCommand() {
 			exitProcess(0)
 		}
 
-		SOURCES = extensions.map {
+		SOURCES = extensions.filterNot { skipExtensions.contains(it) }.map {
 			it.absolutePath to when (it.extension.lowercase(Locale.getDefault())) {
 				"lua" -> ExtensionType.LuaScript
 				else -> {

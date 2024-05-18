@@ -351,23 +351,13 @@ fun main(args: Array<String>) {
 				exitProcess(0)
 			}
 
-			val failedExtensions = hashMapOf<String, Exception>()
-
 			run {
 				for (extensionInfo in SOURCES) {
 					try {
 						testExtension(repoIndex, extensionInfo)
 					} catch (e: Exception) {
-						failedExtensions[extensionInfo.first] = e
-						e.printStackTrace()
+						System.err.println("(" + extensionInfo.first + "): " + e.stackTraceToString())
 					}
-				}
-			}
-
-			if (failedExtensions.isNotEmpty()) {
-				System.err.println("Failed extensions: ")
-				failedExtensions.forEach { info ->
-					System.err.println("(" + info.key + "): " + info.value.stackTraceToString())
 				}
 			}
 

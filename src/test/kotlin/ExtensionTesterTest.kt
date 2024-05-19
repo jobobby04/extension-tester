@@ -18,6 +18,7 @@
 
 import app.shosetsu.tester.main
 import org.junit.Test
+import org.slf4j.simple.SimpleLogger
 import kotlin.time.ExperimentalTime
 
 /**
@@ -29,6 +30,7 @@ class ExtensionTesterTest {
 	@Test
 	@ExperimentalTime
 	fun testProgram() {
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
 		main(arrayOf(
 			"-r",
 			"../extensions/",

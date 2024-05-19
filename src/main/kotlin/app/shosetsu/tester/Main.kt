@@ -34,6 +34,7 @@ import app.shosetsu.tester.Config.PRINT_REPO_INDEX
 import app.shosetsu.tester.Config.SOURCES
 import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
 import app.shosetsu.tester.Config.VALIDATE_INDEX
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -60,6 +61,8 @@ val json = Json { prettyPrint = true }
 
 private val globals = shosetsuGlobals()
 
+val logger = KotlinLogging.logger("Extension Tester")
+
 private fun loadScript(file: File, source_pre: String = "ext"): LuaValue {
 	val l = try {
 		globals.load(file.readText(), "$source_pre(${file.name})")!!
@@ -76,76 +79,70 @@ fun showNovel(ext: IExtension, novelURL: String) {
 	}
 
 	while (novel.chapters.isEmpty()) {
-		println("$CRED Chapters are empty $CRESET")
+		logger.warn("Chapters are empty")
 		return
 	}
 
 	if (PRINT_NOVELS)
-		println(novel)
+		logger.info(novel.toString())
+
 	if (PRINT_NOVEL_STATS)
-		println("${novel.title} - ${novel.chapters.size} chapters.")
-	println()
+		logger.info("${novel.title} - ${novel.chapters.size} chapters.")
 
 	val passage = outputTimedValue("ext.getPassage") {
 		ext.getPassage(novel.chapters[SPECIFIC_CHAPTER].link)
 	}
 
 	if (PRINT_PASSAGES)
-		println("Passage:\t${passage.decodeToString()}")
+		logger.info("Passage:\t${passage.decodeToString()}")
 	else
-		println(with(passage.decodeToString()) {
+		logger.info(with(passage.decodeToString()) {
 			if (length < 25) "Result: $this"
 			else "$length chars long result: " +
 					"${take(10)} [...] ${takeLast(10)}"
 		})
 }
 
+@Throws(Exception::class)
 @ExperimentalTime
-@Suppress("ConstantConditionIf")
 fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	if (PRINT_LISTINGS) {
-		println("$CPURPLE[")
-		print(novels.joinToString(", ") { it.toString() })
-		println("]$CRESET")
+		logger.info { (novels.joinToString(", ") { it.toString() }) }
 	}
 
-	println("${novels.size} novels.")
+	logger.info { "${novels.size} novels." }
 	if (PRINT_LIST_STATS) {
-		print("${novels.count { it.title.isEmpty() }} with no title, ")
-		print("${novels.count { it.link.isEmpty() }} with no link, ")
-		print("${novels.count { it.imageURL.isEmpty() }} with no image url.")
-		println()
+		logger.warn { ("${novels.count { it.title.isEmpty() }} with no title, ") }
+		logger.warn { ("${novels.count { it.link.isEmpty() }} with no link, ") }
+		logger.warn { ("${novels.count { it.imageURL.isEmpty() }} with no image url.") }
 	}
-
-	println()
 
 	if (novels.isEmpty())
 		return
 
 	var selectedNovel = 0
-	println(novels[selectedNovel].link)
+	logger.debug { novels[selectedNovel].link }
 	var novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novels[selectedNovel].link, true)
 	}
 
 	while (novel.chapters.isEmpty() && selectedNovel < novels.lastIndex) {
-		println("$CRED Chapters are empty, trying next novel $CRESET")
+		logger.warn { "Chapters are empty, trying next novel" }
 		selectedNovel++
 		novel = outputTimedValue("ext.parseNovel") {
 			ext.parseNovel(novels[selectedNovel].link, true)
 		}
 	}
 
-	if (novel.chapters.isEmpty())
-		return
+	if (novel.chapters.isEmpty()) {
+		throw Exception("Chapters still empty after retry, likely an issue.")
+	}
 
 	if (PRINT_NOVELS)
-		println(novel)
+		logger.info { novel.toString() }
 
 	if (PRINT_NOVEL_STATS)
-		println("${novel.title} - ${novel.chapters.size} chapters.")
-
-	println()
+		logger.info { "${novel.title} - ${novel.chapters.size} chapters." }
 
 
 	val passage = outputTimedValue("ext.getPassage") {
@@ -153,14 +150,17 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	}
 
 
-	if (PRINT_PASSAGES)
-		println("Passage:\t${passage.decodeToString()}")
-	else
-		println(with(passage.decodeToString()) {
-			if (length < 25) "Result: $this"
-			else "$length chars long result: " +
-					"${take(10)} [...] ${takeLast(10)}"
-		})
+	if (PRINT_PASSAGES) {
+		logger.info { "Passage:\t${passage.decodeToString()}" }
+	} else {
+		logger.info {
+			with(passage.decodeToString()) {
+				if (length < 25) "Result: $this"
+				else "$length chars long result: " +
+						"${take(10)} [...] ${takeLast(10)}"
+			}
+		}
+	}
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -180,7 +180,7 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 		}
 		val fullName = filter.state?.javaClass?.simpleName
 
-		println("$tabs>${name}\t[$id]\t${fName}\t={$fullName}")
+		logger.info { "$tabs>${name}\t[$id]\t${fName}\t={$fullName}" }
 		when (filter) {
 			is Filter.FList -> {
 				filter.filters.printOut(indent + 1)
@@ -209,11 +209,11 @@ fun printExecutionTime(job: String, time: Duration) {
 }
 
 private fun printExecutionTime(job: String, timeMs: Double) {
-	println("$CGREEN COMPLETED [$job] in $timeMs ms $CRED")
+	logger.debug { "COMPLETED [$job] in $timeMs ms" }
 }
 
 fun printErrorln(message: String) {
-	println("$CRED$message$CRESET")
+	logger.error { message }
 }
 
 object Cookies : CookieJar {
@@ -248,7 +248,7 @@ fun setupLibs() {
 	httpClient = OkHttpClient.Builder().cookieJar(Cookies).addInterceptor {
 		outputTimedValue("Time till response") {
 			it.proceed(it.request().also { request ->
-				println(request.url.toUrl().toString())
+				logger.debug { request.url.toUrl().toString() }
 			})
 		}
 	}.build()
@@ -267,9 +267,11 @@ fun main(args: Array<String>) {
 				RepoIndex.repositoryJsonParser.decodeFromStream(File("$DIRECTORY/index.json").inputStream())
 
 			if (PRINT_REPO_INDEX)
-				println(outputTimedValue("RepoIndexLoad") {
-					repoIndex.prettyPrint()
-				})
+				logger.info {
+					outputTimedValue("RepoIndexLoad") {
+						repoIndex.prettyPrint()
+					}
+				}
 
 			if (VALIDATE_INDEX) {
 				// Validate extensions
@@ -279,7 +281,7 @@ fun main(args: Array<String>) {
 						remove(extension)
 					}.forEach { otherExt ->
 						if (extension.id == otherExt.id) {
-							println("Extension `${extension.name}` has the same id as `${otherExt.name}`: ${extension.id}")
+							logger.error { "Extension `${extension.name}` has the same id as `${otherExt.name}`: ${extension.id}" }
 							exitProcess(1)
 						}
 					}
@@ -288,7 +290,7 @@ fun main(args: Array<String>) {
 						val extFile =
 							File("$DIRECTORY/src/${extension.lang}/${extension.fileName}.lua")
 						if (!extFile.exists()) {
-							println("Extension `${extension.name}`(${extension.id}) is not in expected path: $extFile")
+							logger.error { "Extension `${extension.name}`(${extension.id}) is not in expected path: $extFile" }
 							exitProcess(1)
 						}
 					}
@@ -302,7 +304,7 @@ fun main(args: Array<String>) {
 							remove(repoLibrary)
 						}.forEach { otherLib ->
 							if (repoLibrary.name == otherLib.name) {
-								println("Library `$repoLibrary` has the same name as `$otherLib`")
+								logger.error { "Library `$repoLibrary` has the same name as `$otherLib`" }
 								exitProcess(1)
 							}
 						}
@@ -312,7 +314,7 @@ fun main(args: Array<String>) {
 							val extFile =
 								File("$DIRECTORY/lib/${repoLibrary.name}.lua")
 							if (!extFile.exists()) {
-								println("Repo $repoLibrary is not in expected path: $extFile")
+								logger.error { "Repo $repoLibrary is not in expected path: $extFile" }
 								exitProcess(1)
 							}
 						}
@@ -327,7 +329,7 @@ fun main(args: Array<String>) {
 						remove(style)
 					}.forEach { otherStyle ->
 						if (style.id == otherStyle.id) {
-							println("Style `${style.name}` has the same id as `${otherStyle.name}`: ${style.id}")
+							logger.error { "Style `${style.name}` has the same id as `${otherStyle.name}`: ${style.id}" }
 							exitProcess(1)
 						}
 					}
@@ -335,13 +337,13 @@ fun main(args: Array<String>) {
 						val extFile =
 							File("$DIRECTORY/styles/${style.fileName}.css")
 						if (!extFile.exists()) {
-							println("Style `${style.name}`(${style.id}) is not in expected path: $extFile")
+							logger.error { "Style `${style.name}`(${style.id}) is not in expected path: $extFile" }
 							exitProcess(1)
 						}
 					}
 				}
 
-				println("Index is valid")
+				logger.info { "Index is valid" }
 			}
 
 			/**
@@ -356,19 +358,17 @@ fun main(args: Array<String>) {
 					try {
 						testExtension(repoIndex, extensionInfo)
 					} catch (e: Exception) {
-						System.err.println("(" + extensionInfo.first + "): " + e.stackTraceToString())
+						logger.error(e) { "(" + extensionInfo.first + ")" }
 					}
 				}
 			}
 
-			println("\n\tTESTS COMPLETE")
+			logger.info { "\n\tTESTS COMPLETE" }
 			exitProcess(0)
 		} catch (e: Exception) {
 			e.printStackTrace()
 			e.message?.let {
-				print(CRED)
-				print(it.substring(it.lastIndexOf("}") + 1))
-				println(CRESET)
+				logger.error { it.substring(it.lastIndexOf("}") + 1) }
 			}
 			exitProcess(1)
 		}

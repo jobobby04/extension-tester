@@ -27,8 +27,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		repoIndex.extensions.find {
 			it.fileName == extensionFile.nameWithoutExtension
 		}!!
-	println("\n\n========== $extensionPath ==========")
-
+	logger.info { "Testing: $extensionPath" }
 
 	val extension = outputTimedValue("LuaExtension") {
 		when (extensionPath.second) {
@@ -43,50 +42,49 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 
 	val settingsModel: Map<Int, *> =
 		extension.settingsModel.toList().also {
-			println("Settings model:")
-			it.printOut()
-		}.mapify()
-	val searchFiltersModel: Map<Int, *> =
-		extension.searchFiltersModel.toList().also {
-			println("SearchFilters Model:")
+			logger.info { "Settings model:" }
 			it.printOut()
 		}.mapify()
 
-	println(CCYAN)
-	println("ID       : ${extension.formatterID}")
-	println("Name     : ${extension.name}")
-	println("BaseURL  : ${extension.baseURL}")
-	println("Image    : ${extension.imageURL}")
-	println("Settings : $settingsModel")
-	println("Filters  : $searchFiltersModel")
+	val searchFiltersModel: Map<Int, *> =
+		extension.searchFiltersModel.toList().also {
+			logger.info { "SearchFilters Model:" }
+			it.printOut()
+		}.mapify()
+
+	logger.info { "ID       : ${extension.formatterID}" }
+	logger.info { "Name     : ${extension.name}" }
+	logger.info { "BaseURL  : ${extension.baseURL}" }
+	logger.info { "Image    : ${extension.imageURL}" }
+	logger.info { "Settings : $settingsModel" }
+	logger.info { "Filters  : $searchFiltersModel" }
 	if (PRINT_METADATA)
-		println(
+		logger.info(
 			"MetaData : ${
 				json.encodeToString(extension.exMetaData)
 			}"
 		)
-	println(CRESET)
 
 	if (VALIDATE_METADATA) {
 		val metadata = extension.exMetaData
 		when {
 			extension.formatterID != metadata.id -> {
-				println("Extension id does not match metadata")
+				logger.info("Extension id does not match metadata")
 				exitProcess(1)
 			}
 
 			repoExtension.version != metadata.version -> {
-				println("Metadata version does not match index")
+				logger.info("Metadata version does not match index")
 				exitProcess(1)
 			}
 
 			repoExtension.libVersion != metadata.libVersion -> {
-				println("Metadata lib version does not match index")
+				logger.info("Metadata lib version does not match index")
 				exitProcess(1)
 			}
 
 			else -> {
-				println("Metadata is valid")
+				logger.info("Metadata is valid")
 				if (CI_MODE) {
 					exitProcess(0)
 				}
@@ -102,7 +100,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		with(l) {
 			print("\n-------- Listing \"${name}\" ")
 			print(if (isIncrementing) "(incrementing)" else "")
-			println(" --------")
+			logger.info(" --------")
 
 			var novels = getListing(
 				HashMap(searchFiltersModel).apply {
@@ -145,7 +143,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	}
 
 	if (extension.hasSearch) {
-		println("\n-------- Search --------")
+		logger.info("\n-------- Search --------")
 		val filters = extension.searchFiltersModel.associateBy { it.id }
 		FILTERS.forEach { (id, state) ->
 			val filter = filters.getOrElse(id) { null }

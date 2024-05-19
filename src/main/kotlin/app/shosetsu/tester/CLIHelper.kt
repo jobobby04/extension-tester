@@ -43,13 +43,6 @@ const val ARGUMENT_USER_AGENT = "--user-agent"
 const val ARGUMENT_VALIDATE_METADATA = "--validate-metadata"
 const val ARGUMENT_VALIDATE_INDEX = "--validate-index"
 
-/** Resets the color of a line */
-const val CRESET: String = "\u001B[0m"
-const val CCYAN: String = "\u001B[36m"
-const val CPURPLE: String = "\u001B[35m"
-const val CRED: String = "\u001B[31m"
-const val CGREEN: String = "\u001B[32m"
-
 fun printVersion() {
 	println("Version: ${BuildConfig.VERSION}")
 }

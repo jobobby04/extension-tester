@@ -27,6 +27,8 @@ dependencies {
 
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 	implementation("com.github.ajalt.clikt:clikt:4.2.2") // for CLI
+	implementation("org.slf4j:slf4j-simple:2.0.13")
+	implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
 
 	implementation("com.gitlab.shosetsuorg:kotlin-lib:11a3569bc32a47d8026901925152cfec1fdf6b5c")
 	implementation(kotlin("stdlib"))

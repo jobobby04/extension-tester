@@ -59,39 +59,6 @@ private fun loadScript(file: File, source_pre: String = "ext"): LuaValue {
 	return l.call()!!
 }
 
-@Suppress("UNCHECKED_CAST")
-fun List<Filter<*>>.printOut(indent: Int = 0) {
-	forEach { filter ->
-		val id = filter.id
-		val fName = filter.name
-
-		val tabs = StringBuilder("\t").apply {
-			for (i in 0 until indent)
-				this.append("\t")
-		}
-		val name = filter.javaClass.simpleName.let {
-			if (it.length > 7)
-				it.substring(0, 6)
-			else it
-		}
-		val fullName = filter.state?.javaClass?.simpleName
-
-		logger.info { "$tabs>${name}\t[$id]\t${fName}\t={$fullName}" }
-		when (filter) {
-			is Filter.FList -> {
-				filter.filters.printOut(indent + 1)
-			}
-
-			is Filter.Group<*> -> {
-				filter.filters.printOut(indent + 1)
-			}
-
-			else -> {
-			}
-		}
-	}
-}
-
 /**
  * Establish
  */

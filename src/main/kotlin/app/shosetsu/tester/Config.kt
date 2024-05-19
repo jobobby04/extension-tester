@@ -170,14 +170,14 @@ object Config : CliktCommand() {
 			it.absolutePath to when (it.extension.lowercase(Locale.getDefault())) {
 				"lua" -> ExtensionType.LuaScript
 				else -> {
-					printErrorln("Unknown file type ${it.extension}")
+					logger.error { "Unknown file type ${it.extension}" }
 					exitProcess(1)
 				}
 			}
 		}
 
 		if (!(CI_MODE && VALIDATE_INDEX || PRINT_REPO_INDEX) && SOURCES.isEmpty()) {
-			printErrorln("No extension provided")
+			logger.error { "No extension provided" }
 			exitProcess(1)
 		}
 
@@ -206,14 +206,14 @@ object Config : CliktCommand() {
 			val id = values.getOrNull(0)?.toIntOrNull()
 
 			if (id == null) {
-				printErrorln("`modify-filter` has not been provided a valid filter id")
+				logger.error { "`modify-filter` has not been provided a valid filter id" }
 				exitProcess(1)
 			}
 
 			val value = values.getOrNull(1)
 
 			if (value == null) {
-				printErrorln("`modify-filter` has not been provided a valid state")
+				logger.error { "`modify-filter` has not been provided a valid state" }
 				exitProcess(1)
 			}
 

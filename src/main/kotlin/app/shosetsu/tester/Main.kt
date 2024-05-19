@@ -91,10 +91,6 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 	}
 }
 
-fun printErrorln(message: String) {
-	logger.error { message }
-}
-
 /**
  * Establish
  */

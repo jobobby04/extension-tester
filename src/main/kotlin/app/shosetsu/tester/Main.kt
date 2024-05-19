@@ -49,10 +49,11 @@ private val globals = shosetsuGlobals()
 
 val logger = KotlinLogging.logger("Extension Tester")
 
+@Throws(Exception::class)
 private fun loadScript(file: File, source_pre: String = "ext"): LuaValue {
 	val l = try {
 		globals.load(file.readText(), "$source_pre(${file.name})")!!
-	} catch (e: Error) {
+	} catch (e: Exception) {
 		throw e
 	}
 	return l.call()!!
@@ -98,6 +99,7 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 fun setupLibs() {
 	ShosetsuLuaLib.libLoader = {
 		outputTimedValue("loadScript") {
+			@Suppress("CheckedExceptionsKotlin")
 			loadScript(
 				File("$DIRECTORY/lib/$it.lua"),
 				"lib"

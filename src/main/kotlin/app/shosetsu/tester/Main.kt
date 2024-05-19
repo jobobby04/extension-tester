@@ -17,30 +17,19 @@ package app.shosetsu.tester/*
  */
 
 import app.shosetsu.lib.Filter
-import app.shosetsu.lib.IExtension
-import app.shosetsu.lib.Novel
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
 import app.shosetsu.lib.lua.ShosetsuLuaLib
 import app.shosetsu.lib.lua.shosetsuGlobals
 import app.shosetsu.tester.Config.CI_MODE
 import app.shosetsu.tester.Config.DIRECTORY
-import app.shosetsu.tester.Config.PRINT_LISTINGS
-import app.shosetsu.tester.Config.PRINT_LIST_STATS
-import app.shosetsu.tester.Config.PRINT_NOVELS
-import app.shosetsu.tester.Config.PRINT_NOVEL_STATS
-import app.shosetsu.tester.Config.PRINT_PASSAGES
 import app.shosetsu.tester.Config.PRINT_REPO_INDEX
 import app.shosetsu.tester.Config.SOURCES
-import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
 import app.shosetsu.tester.Config.VALIDATE_INDEX
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import okhttp3.Cookie
-import okhttp3.CookieJar
-import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
@@ -123,22 +112,6 @@ private fun printExecutionTime(job: String, timeMs: Double) {
 
 fun printErrorln(message: String) {
 	logger.error { message }
-}
-
-object Cookies : CookieJar {
-	private val cookieJar = mutableMapOf<String, MutableList<Cookie>>()
-
-	override fun loadForRequest(url: HttpUrl): List<Cookie> {
-		return cookieJar[url.host].orEmpty()
-	}
-
-	override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-		val list = cookieJar.getOrPut(url.host) { mutableListOf() }
-		list.removeAll { cookie ->
-			cookies.any { it.name == cookie.name }
-		}
-		list.addAll(cookies)
-	}
 }
 
 /**

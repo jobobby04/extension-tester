@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.system.exitProcess
 import kotlin.time.ExperimentalTime
 
-@Suppress("UNCHECKED_CAST")
 fun List<Filter<*>>.printOut(indent: Int = 0) {
 	forEach { filter ->
 		val id = filter.id
@@ -76,6 +75,7 @@ fun showNovel(ext: IExtension, novelURL: String) {
 		ext.getPassage(novel.chapters[SPECIFIC_CHAPTER].link)
 	}
 
+	@Suppress("CheckedExceptionsKotlin")
 	if (PRINT_PASSAGES)
 		logger.info { "Passage:\t${passage.decodeToString()}" }
 	else
@@ -135,8 +135,11 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	}
 
 
+	@Suppress("CheckedExceptionsKotlin")
 	if (PRINT_PASSAGES) {
-		logger.info { "Passage:\t${passage.decodeToString()}" }
+		logger.info {
+			"Passage:\t${passage.decodeToString()}"
+		}
 	} else {
 		logger.info {
 			with(passage.decodeToString()) {

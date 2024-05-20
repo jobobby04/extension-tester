@@ -16,7 +16,6 @@ package app.shosetsu.tester/*
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import app.shosetsu.lib.Filter
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
 import app.shosetsu.lib.lua.ShosetsuLuaLib
@@ -50,9 +49,9 @@ private val globals = shosetsuGlobals()
 val logger = KotlinLogging.logger("Extension Tester")
 
 @Throws(Exception::class)
-private fun loadScript(file: File, source_pre: String = "ext"): LuaValue {
+private fun loadScript(file: File): LuaValue {
 	val l = try {
-		globals.load(file.readText(), "$source_pre(${file.name})")!!
+		globals.load(file.readText(), "lib(${file.name})")!!
 	} catch (e: Exception) {
 		throw e
 	}
@@ -68,8 +67,7 @@ fun setupLibs() {
 		outputTimedValue("loadScript") {
 			@Suppress("CheckedExceptionsKotlin")
 			loadScript(
-				File("$DIRECTORY/lib/$it.lua"),
-				"lib"
+				File("$DIRECTORY/lib/$it.lua")
 			)
 		}
 	}

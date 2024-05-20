@@ -62,28 +62,30 @@ fun showNovel(ext: IExtension, novelURL: String) {
 	}
 
 	while (novel.chapters.isEmpty()) {
-		logger.warn("Chapters are empty")
+		logger.warn { "Chapters are empty" }
 		return
 	}
 
 	if (PRINT_NOVELS)
-		logger.info(novel.toString())
+		logger.info { novel.toString() }
 
 	if (PRINT_NOVEL_STATS)
-		logger.info("${novel.title} - ${novel.chapters.size} chapters.")
+		logger.info { "${novel.title} - ${novel.chapters.size} chapters." }
 
 	val passage = outputTimedValue("ext.getPassage") {
 		ext.getPassage(novel.chapters[SPECIFIC_CHAPTER].link)
 	}
 
 	if (PRINT_PASSAGES)
-		logger.info("Passage:\t${passage.decodeToString()}")
+		logger.info { "Passage:\t${passage.decodeToString()}" }
 	else
-		logger.info(with(passage.decodeToString()) {
-			if (length < 25) "Result: $this"
-			else "$length chars long result: " +
-					"${take(10)} [...] ${takeLast(10)}"
-		})
+		logger.info {
+			with(passage.decodeToString()) {
+				if (length < 25) "Result: $this"
+				else "$length chars long result: " +
+						"${take(10)} [...] ${takeLast(10)}"
+			}
+		}
 }
 
 @Throws(Exception::class)
@@ -189,32 +191,32 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	logger.info { "Settings : $settingsModel" }
 	logger.info { "Filters  : $searchFiltersModel" }
 	if (PRINT_METADATA)
-		logger.info(
+		logger.info {
 			"MetaData : ${
 				json.encodeToString(extension.exMetaData)
 			}"
-		)
+		}
 
 	if (VALIDATE_METADATA) {
 		val metadata = extension.exMetaData
 		when {
 			extension.formatterID != metadata.id -> {
-				logger.info("Extension id does not match metadata")
+				logger.error { "Extension id does not match metadata" }
 				exitProcess(1)
 			}
 
 			repoExtension.version != metadata.version -> {
-				logger.info("Metadata version does not match index")
+				logger.error { "Metadata version does not match index" }
 				exitProcess(1)
 			}
 
 			repoExtension.libVersion != metadata.libVersion -> {
-				logger.info("Metadata lib version does not match index")
+				logger.error { "Metadata lib version does not match index" }
 				exitProcess(1)
 			}
 
 			else -> {
-				logger.info("Metadata is valid")
+				logger.info { "Metadata is valid" }
 				if (CI_MODE) {
 					exitProcess(0)
 				}
@@ -228,9 +230,11 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 
 	extension.listings.forEach { l ->
 		with(l) {
-			print("\n-------- Listing \"${name}\" ")
-			print(if (isIncrementing) "(incrementing)" else "")
-			logger.info(" --------")
+			logger.info {
+				"\n-------- Listing \"${name}\" " +
+						if (isIncrementing) "(incrementing)" else "" +
+								" --------"
+			}
 
 			var novels = getListing(
 				HashMap(searchFiltersModel).apply {
@@ -273,7 +277,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	}
 
 	if (extension.hasSearch) {
-		logger.info("\n-------- Search --------")
+		logger.info { "\n-------- Search --------" }
 		val filters = extension.searchFiltersModel.associateBy { it.id }
 		FILTERS.forEach { (id, state) ->
 			val filter = filters.getOrElse(id) { null }

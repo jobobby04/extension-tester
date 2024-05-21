@@ -17,6 +17,7 @@ import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
 import app.shosetsu.tester.Config.SPECIFIC_NOVEL_URL
 import app.shosetsu.tester.Config.VALIDATE_METADATA
 import kotlinx.serialization.encodeToString
+import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.system.exitProcess
@@ -107,6 +108,14 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 
 	var selectedNovel = 0
 	logger.debug { novels[selectedNovel].link }
+
+	verifyImageLoad(
+		novels[selectedNovel].imageURL,
+		{ "Initial novel image loads" },
+		{ "Initial novel image does not load: ${novels[selectedNovel]}" },
+		{ "Initial novel image is not provided" }
+	)
+
 	var novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novels[selectedNovel].link, true)
 	}
@@ -122,6 +131,13 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 	if (novel.chapters.isEmpty()) {
 		throw Exception("Chapters still empty after retry, likely an issue.")
 	}
+
+	verifyImageLoad(
+		novel.imageURL,
+		{ "Parsed Novel image loads" },
+		{ "Parsed Novel image does not load: ${novels[selectedNovel]}" },
+		{ "Parsed novel image is not provided" }
+	)
 
 	if (PRINT_NOVELS)
 		logger.info { novel.toString() }
@@ -161,6 +177,30 @@ fun flattenFilters(filters: List<Filter<*>>): List<Filter<*>> {
 			is Filter.Group<*> -> flattenFilters(it.filters)
 			else -> listOf(it)
 		}
+	}
+}
+
+fun verifyImageLoad(
+	imageURL: String,
+	successMessage: () -> String,
+	errorMessage: () -> String,
+	emptyMessage: () -> String
+) {
+	if (imageURL.isNotBlank()) {
+		try {
+			val request = Request.Builder().url(imageURL).build()
+			val response = ShosetsuSharedLib.httpClient.newCall(request).execute()
+
+			if (response.code == 200) {
+				logger.info(successMessage)
+			} else {
+				logger.error(errorMessage)
+			}
+		} catch (e: Exception) {
+			logger.error(e, errorMessage)
+		}
+	} else {
+		logger.error(emptyMessage)
 	}
 }
 
@@ -244,6 +284,22 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		throw Exception("Test Manually")
 	}
 
+	// Check if images load
+	verifyImageLoad(
+		repoExtension.imageURL,
+		{ "Repository imageURL loaded successfully" },
+		{ "Repository imageURL does not load" },
+		{ "Repository imageURL is missing" }
+	)
+
+	verifyImageLoad(
+		repoExtension.imageURL,
+		{ "Extension imageURL loaded successfully" },
+		{ "Extension imageURL does not load" },
+		{ "Extension imageURL is missing" }
+	)
+
+	// Test each listing
 	extension.listings.forEach { l ->
 		with(l) {
 			logger.info {

@@ -316,11 +316,9 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 				null -> Unit
 			}
 		}
-		val filtersChanged = filters.mapValues { (_, filter) ->
-			(filter as? Filter.Group<*>)?.filters?.map { it.state }
-				?: (filter as? Filter.FList)?.filters?.map { it.state }
-				?: filter.state
-		}
+
+		val filtersChanged = filters.values.toList().mapify()
+
 		showListing(
 			extension,
 			outputTimedValue("ext.search") {

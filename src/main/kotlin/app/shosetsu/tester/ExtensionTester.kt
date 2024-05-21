@@ -152,6 +152,19 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 }
 
 /**
+ * Flattens out filters
+ */
+fun flattenFilters(filters: List<Filter<*>>): List<Filter<*>> {
+	return filters.flatMap {
+		when (it) {
+			is Filter.FList -> flattenFilters(it.filters)
+			is Filter.Group<*> -> flattenFilters(it.filters)
+			else -> listOf(it)
+		}
+	}
+}
+
+/**
  *  @since 2024 / 05 / 18
  */
 @OptIn(ExperimentalTime::class)
@@ -281,7 +294,9 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 
 	if (extension.hasSearch) {
 		logger.info { "\n-------- Search --------" }
-		val filters = extension.searchFiltersModel.associateBy { it.id }
+
+		val filters = flattenFilters(extension.searchFiltersModel.toList()).associateBy { it.id }
+
 		FILTERS.forEach { (id, state) ->
 			val filter = filters.getOrElse(id) { null }
 

@@ -29,6 +29,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.doomsdayrs.lib.extension_tester.BuildConfig
+import org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -101,6 +102,10 @@ object Config : CliktCommand() {
 		help = "Run in CI mode, modifies `print-index`"
 	).flag(default = false)
 
+	val VERBOSE by option(
+		ARGUMENT_VERBOSE,
+		help = "Print out debug logs"
+	).flag(default = false)
 
 	/**
 	 * Novel to load via the extension, useful for novel cases.
@@ -161,6 +166,9 @@ object Config : CliktCommand() {
 	}
 
 	override fun run() {
+		if (VERBOSE) {
+			System.setProperty(DEFAULT_LOG_LEVEL_KEY, "TRACE");
+		}
 		if (printVersion) {
 			printVersion()
 			exitProcess(0)

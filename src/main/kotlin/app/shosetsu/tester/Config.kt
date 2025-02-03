@@ -1,4 +1,4 @@
-package app.shosetsu.tester/*
+/*
  * Extension Tester: Test Shosetsu extensions
  * Copyright (C) 2022 Doomsdayrs
  *
@@ -15,6 +15,7 @@ package app.shosetsu.tester/*
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package app.shosetsu.tester
 
 import app.shosetsu.lib.ExtensionType
 import app.shosetsu.lib.ShosetsuSharedLib
@@ -26,11 +27,15 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parameters.types.path
 import com.github.doomsdayrs.lib.extension_tester.BuildConfig
-import org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY
+import java.nio.file.Path
 import java.util.*
+import java.util.logging.Level
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.extension
+import kotlin.io.path.readText
 import kotlin.system.exitProcess
 
 /**
@@ -40,70 +45,77 @@ import kotlin.system.exitProcess
 object Config : CliktCommand() {
 
 	val VALIDATE_METADATA by option(
-		ARGUMENT_VALIDATE_METADATA,
+		"--validate-metadata",
 		help = "Validate the metadata, program will end if metadata is invalid"
 	).flag(default = false)
 
 	val VALIDATE_INDEX by option(
-		ARGUMENT_VALIDATE_INDEX,
+		"--validate-index",
 		help = "Validate the index, program will end if index is invalid"
 	).flag(default = false)
 
+	val GENERATE_INDEX by option(
+		"--generate-index",
+		help = "Generate a new index"
+	).flag(default = false)
+
+	val WATCH by option(
+		"--watch",
+		help = "Watch the directory for changes"
+	).flag(default = false)
+
 	val SEARCH_VALUE by option(
-		ARGUMENT_TARGET_QUERY,
+		"--target-query",
 		help = "Target a specific query"
-	)
-		.default("world")
+	).default("world")
 
 	val PRINT_LISTINGS by option(
-		ARGUMENT_PRINT_LISTINGS,
+		"--print-listings",
 		help = "Print out loaded listings"
 	).flag(default = false)
 
 	val PRINT_LIST_STATS by option(
-		ARGUMENT_PRINT_LIST_STATS,
+		"--print-list-stats",
 		help = "Print out stats of listings"
-	).flag(
-		default = false
-	)
+	).flag(default = false)
 
 	val PRINT_NOVELS by option(
-		ARGUMENT_PRINT_NOVELS,
+		"--print-novels",
 		help = "Print out loaded novels"
 	).flag(default = false)
 
 	val PRINT_NOVEL_STATS by option(
-		ARGUMENT_PRINT_NOVEL_STATS,
+		"--print-novel-stats",
 		help = "Print out stats of loaded novels"
 	).flag(default = false)
 
 	val PRINT_PASSAGES by option(
-		ARGUMENT_PRINT_PASSAGES,
+		"--print-passages",
 		help = "Print out passages"
 	).flag(default = false)
 
 	val PRINT_REPO_INDEX by option(
-		ARGUMENT_PRINT_INDEX,
+		"--print-index",
 		help = "Print out repository index"
 	).flag(default = false)
 
 	val PRINT_METADATA by option(
-		ARGUMENT_PRINT_METADATA,
+		"--print-meta",
 		help = "Print out meta data of an extension"
 	).flag(default = false)
 
 	val REPEAT by option(
-		ARGUMENT_REPEAT,
+		"--repeat",
 		help = "Repeat a result, as sometimes there is an obscure error with reruns"
 	).flag(default = false)
 
 	val CI_MODE by option(
-		ARGUMENT_CI,
+		"--ci",
 		help = "Run in CI mode, modifies `print-index`"
 	).flag(default = false)
 
 	val VERBOSE by option(
-		ARGUMENT_VERBOSE,
+		"--verbose",
 		help = "Print out debug logs"
 	).flag(default = false)
 
@@ -112,25 +124,25 @@ object Config : CliktCommand() {
 	 * default is empty, thus ignored.
 	 */
 	val SPECIFIC_NOVEL_URL by option(
-		ARGUMENT_TARGET_NOVEL,
+		"--target-novel",
 		help = "Target a specific novel"
 	).default("")
 
 	val SPECIFIC_CHAPTER by option(
-		ARGUMENT_TARGET_CHAPTER,
+		"--target-chapter",
 		help = "Target a specific chapter of a specific novel"
 	).int().default(0)
 
-	private val rawFilters by option(ARGUMENT_MODIFY_FILTER).multiple()
+	private val rawFilters by option("--modify-filter").multiple()
 
 	var FILTERS = emptyMap<Int, String>()
 		private set
 
 	/** Replace with the directory of the extensions you want to use*/
 	val DIRECTORY by option(
-		names = arrayOf(ARG_FLAG_REPO, "--repo", "--repository"),
+		names = arrayOf("-r", "--repo", "--repository"),
 		help = "Specifies repository path to use, Defaults to current directory"
-	).default("./")
+	).path().default(Path.of("."))
 
 	// Should be an array of the path of the script to the type of that script
 	var SOURCES: List<Pair<String, ExtensionType>> = listOf()
@@ -139,24 +151,24 @@ object Config : CliktCommand() {
 	private val skipExtensions by option(
 		"--skip",
 		help = "Specifies which extensions to skip, via their paths"
-	).file(true, canBeDir = false).multiple()
+	).path(true, canBeDir = false).multiple()
 
 	private val extensions by argument(help = "Specifies which extensions to test")
-		.file(true, canBeDir = false, mustBeReadable = true)
+		.path(true, canBeDir = false, mustBeReadable = true)
 		.multiple()
 
 	private val printVersion by option(
-		ARGUMENT_VERSION,
+		"--version",
 		help = "Print version"
 	).flag(default = false)
 
 	private val headersFile by option(
-		ARGUMENT_HEADERS,
+		"--headers",
 		help = "Path to a headers file to read from"
-	).file(true, canBeDir = false, mustBeReadable = true)
+	).path(true, canBeDir = false, mustBeReadable = true)
 
 	private val userArgent by option(
-		ARGUMENT_USER_AGENT,
+		"--user-agent",
 		envvar = "EXTENSION_TESTER_USER_AGENT",
 		help = "Easily provide a User Agent to use"
 	).default("ShosetsuExtensionTester/${BuildConfig.VERSION} Sorry for the spam!")
@@ -166,16 +178,14 @@ object Config : CliktCommand() {
 	}
 
 	override fun run() {
-		if (VERBOSE) {
-			System.setProperty(DEFAULT_LOG_LEVEL_KEY, "TRACE");
-		}
+		setupLogging(if (VERBOSE) Level.FINER else null)
 		if (printVersion) {
-			printVersion()
+			println("Version: ${BuildConfig.VERSION}")
 			exitProcess(0)
 		}
 
 		SOURCES = extensions.filterNot { skipExtensions.contains(it) }.map {
-			it.absolutePath to when (it.extension.lowercase(Locale.getDefault())) {
+			it.absolutePathString() to when (it.extension.lowercase(Locale.getDefault())) {
 				"lua" -> ExtensionType.LuaScript
 				else -> {
 					logger.error { "Unknown file type ${it.extension}" }
@@ -184,8 +194,13 @@ object Config : CliktCommand() {
 			}
 		}
 
-		if (!(CI_MODE && VALIDATE_INDEX || PRINT_REPO_INDEX) && SOURCES.isEmpty()) {
+		if (!(CI_MODE && VALIDATE_INDEX || PRINT_REPO_INDEX || GENERATE_INDEX) && SOURCES.isEmpty()) {
 			logger.error { "No extension provided" }
+			exitProcess(1)
+		}
+
+		if (CI_MODE && WATCH) {
+			logger.error { "Cannot run in CI mode and watch mode" }
 			exitProcess(1)
 		}
 

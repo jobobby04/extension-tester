@@ -1,4 +1,4 @@
-package app.shosetsu.tester/*
+/*
  * Extension Tester: Test Shosetsu extensions
  * Copyright (C) 2022 Doomsdayrs
  *
@@ -15,6 +15,7 @@ package app.shosetsu.tester/*
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package app.shosetsu.tester
 
 /**
  * extension-tester

@@ -1,3 +1,20 @@
+/*
+ * Extension Tester: Test Shosetsu extensions
+ * Copyright (C) 2022 Doomsdayrs
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package app.shosetsu.tester
 
 import app.shosetsu.lib.*
@@ -257,18 +274,15 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		val metadata = extension.exMetaData
 		when {
 			extension.formatterID != metadata.id -> {
-				logger.error { "Extension id does not match metadata" }
-				exitProcess(1)
+				throw ExtensionTestException("Extension id does not match metadata")
 			}
 
 			repoExtension.version != metadata.version -> {
-				logger.error { "Metadata version does not match index" }
-				exitProcess(1)
+				throw ExtensionTestException("Metadata version does not match index")
 			}
 
 			repoExtension.libVersion != metadata.libVersion -> {
-				logger.error { "Metadata lib version does not match index" }
-				exitProcess(1)
+				throw ExtensionTestException("Metadata lib version does not match index")
 			}
 
 			else -> {

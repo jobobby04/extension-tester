@@ -1,4 +1,4 @@
-package app.shosetsu.tester/*
+/*
  * Extension Tester: Test Shosetsu extensions
  * Copyright (C) 2022 Doomsdayrs
  *
@@ -15,6 +15,7 @@ package app.shosetsu.tester/*
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package app.shosetsu.tester
 
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
@@ -22,16 +23,21 @@ import app.shosetsu.lib.lua.ShosetsuLuaLib
 import app.shosetsu.lib.lua.shosetsuGlobals
 import app.shosetsu.tester.Config.CI_MODE
 import app.shosetsu.tester.Config.DIRECTORY
+import app.shosetsu.tester.Config.GENERATE_INDEX
 import app.shosetsu.tester.Config.PRINT_REPO_INDEX
 import app.shosetsu.tester.Config.SOURCES
 import app.shosetsu.tester.Config.VALIDATE_INDEX
-import io.github.oshai.kotlinlogging.KotlinLogging
+import app.shosetsu.tester.Config.WATCH
+import com.github.ajalt.clikt.core.main
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.div
+import kotlin.io.path.inputStream
 import kotlin.system.exitProcess
 import kotlin.time.ExperimentalTime
 
@@ -45,8 +51,6 @@ import kotlin.time.ExperimentalTime
 val json = Json { prettyPrint = true }
 
 private val globals = shosetsuGlobals()
-
-val logger = KotlinLogging.logger("Extension Tester")
 
 @Throws(Exception::class)
 private fun loadScript(file: File): LuaValue {
@@ -80,54 +84,73 @@ fun setupLibs() {
 	}.build()
 }
 
-@OptIn(ExperimentalSerializationApi::class)
 @ExperimentalTime
 fun main(args: Array<String>) {
 	Config.main(args)
 
 	setupLibs()
 
+	if (!performIteration()) {
+		exitProcess(1)
+	}
+
+	if (WATCH) {
+		logger.info { "Watching for changes" }
+		DirectoryWatcher(DIRECTORY/"lib", DIRECTORY/"src").apply {
+			onChange { paths ->
+				performIteration(paths.map { it.absolutePathString() }::contains)
+			}
+			watch()
+		}
+	}
+}
+
+class ExtensionTestException(val msg: String) : Exception(msg)
+
+@OptIn(ExperimentalSerializationApi::class, ExperimentalTime::class)
+private fun performIteration(predicate: (String) -> Boolean = { true }): Boolean {
 	outputTimedValue("MAIN") {
 		try {
-			val repoIndex: RepoIndex =
-				RepoIndex.repositoryJsonParser.decodeFromStream(File("$DIRECTORY/index.json").inputStream())
+			val indexPath = DIRECTORY/"index.json"
 
-			if (PRINT_REPO_INDEX)
-				logger.info {
-					outputTimedValue("RepoIndexLoad") {
-						repoIndex.prettyPrint()
-					}
-				}
-
-			if (VALIDATE_INDEX) {
-				validateRepository(repoIndex)
+			if (GENERATE_INDEX) {
+				generateIndex(indexPath, DIRECTORY/"lib", DIRECTORY/"src")
 			}
 
-			/**
-			 * If CI mode is enabled, and repo index flag was added, simply exit, as our task was completed.
-			 */
-			if (PRINT_REPO_INDEX && CI_MODE) {
-				exitProcess(0)
-			}
+			val repoIndex: RepoIndex = indexPath.inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
 
+			if (PRINT_REPO_INDEX) logger.info { outputTimedValue("RepoIndexLoad") { repoIndex.prettyPrint() } }
+
+			if (VALIDATE_INDEX) validateRepository(repoIndex)
+
+			// If CI mode is enabled, and repo index flag was added, simply exit, as our task was completed.
+			if (PRINT_REPO_INDEX && CI_MODE) exitProcess(0)
+
+			val e = Exception("Could not validate extensions")
 			run {
 				for (extensionInfo in SOURCES) {
+					if (!predicate(extensionInfo.first)) continue
 					try {
 						testExtension(repoIndex, extensionInfo)
-					} catch (e: Exception) {
-						logger.error(e) { "(" + extensionInfo.first + ")" }
+					} catch (ex: Exception) {
+						logger.error(ex) { "(" + extensionInfo.first + ")" }
+						e.addSuppressed(ex)
 					}
 				}
 			}
+			if (e.suppressed.isNotEmpty()) throw e
 
-			logger.info { "\n\tTESTS COMPLETE" }
-			exitProcess(0)
+			logger.info { "RUN COMPLETED" }
+			return true
+		} catch (e: ExtensionTestException) {
+			logger.error { e.msg }
+			return false
 		} catch (e: Exception) {
 			e.printStackTrace()
 			e.message?.let {
 				logger.error { it.substring(it.lastIndexOf("}") + 1) }
 			}
-			exitProcess(1)
+			return false
 		}
 	}
 }

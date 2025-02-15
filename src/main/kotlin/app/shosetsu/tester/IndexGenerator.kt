@@ -23,6 +23,7 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
     val authors = mutableMapOf<String, MutableSet<String>>()
     fun addAuthor(author: String, work: String) = author.split(", ")
         .forEach { authors.getOrPut(it) { TreeSet() }.add(work) }
+    val illegalFileEndings = mutableSetOf<Path>()
     val index = RepoIndex(
         libraries = libraryPath.walk()
             .map {
@@ -32,11 +33,13 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
                 }
                 val meta = LuaLibrary(it)
                 addAuthor(meta.libMetaData.author, it.nameWithoutExtension)
+                val data = it.readBytes()
+                if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
                 RepoLibrary(
                     name = it.nameWithoutExtension,
                     version = meta.libMetaData.version,
                     url = null,
-                    hash = it.sha256sum()
+                    hash = data.sha256sum()
                 )
             }
             .filterNotNull()
@@ -55,6 +58,8 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
                 }
                 val meta = LuaExtension(it)
                 addAuthor(meta.exMetaData.author, meta.name)
+                val data = it.readBytes()
+                if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
                 RepoExtension(
                     id = meta.exMetaData.id,
                     name = meta.name,
@@ -63,7 +68,7 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
                     lang = relativePath.getName(0).toString(),
                     version = meta.exMetaData.version,
                     libVersion = meta.exMetaData.libVersion,
-                    md5 = it.sha256sum(), // confusing, but we use sha256 for the hash
+                    md5 = data.sha256sum(), // confusing, but we use sha256 for the hash
                     type = ExtensionType.LuaScript
                 )
             }
@@ -83,5 +88,15 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
                 )
             }
     )
+    if (illegalFileEndings.isNotEmpty()) {
+        logger.warn { """
+            The following files have illegal (non-LF) line endings: $illegalFileEndings
+            If you notice unintended changes in their checksums, this is likely the cause.
+            This may have been caused by an outdated clone of the repository or an unsupported text editor.
+            Please try to clone the repository again or use a different text editor.
+            For further information, this may be helpful: https://stackoverflow.com/questions/10418975/how-to-change-line-ending-settings
+            """.trimIndent().trim()
+        }
+    }
     indexPath.outputStream().use { writerJson.encodeToStream(index, it) }
 }

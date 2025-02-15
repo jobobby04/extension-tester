@@ -9,7 +9,31 @@ import kotlin.io.path.*
 private val ByteArray.hex: String get() = fold("") { str, it -> str + "%02x".format(it) }
 
 private val sha256 = MessageDigest.getInstance("SHA-256")
-fun Path.sha256sum(): String = sha256.digest(readBytes()).hex
+fun ByteArray.sha256sum(): String = sha256.digest(this).hex
+
+private const val cr = '\r'.code.toByte()
+private const val lf = '\n'.code.toByte()
+enum class LineEnding {
+    LF, CRLF, CR
+}
+fun ByteArray.detectLineEnding(): LineEnding {
+    return when {
+        size >= 2 && this[size - 2] == cr && this[size - 1] == lf -> LineEnding.CRLF
+        isNotEmpty() && this[size - 1] == lf -> LineEnding.LF
+        isNotEmpty() && this[size - 1] == cr -> LineEnding.CR
+        else -> {
+            for (i in 0 until size - 1) {
+                when {
+                    this[i] == lf -> return LineEnding.LF
+                    // cr cannot be last, since that would have been caught by the first when
+                    this[i] == cr && this[i + 1] == lf -> return LineEnding.CRLF
+                    this[i] == cr -> return LineEnding.CR
+                }
+            }
+            return LineEnding.LF // if no line endings are present at all, we are probably good with LF
+        }
+    }
+}
 
 @OptIn(ExperimentalPathApi::class)
 class DirectoryWatcher(vararg directories: Path) {

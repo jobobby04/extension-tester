@@ -173,6 +173,21 @@ object Config : CliktCommand() {
 		help = "Easily provide a User Agent to use"
 	).default("ShosetsuExtensionTester/${BuildConfig.VERSION} Sorry for the spam!")
 
+	val flareSolverrUrl by option(
+		"--flaresolverr",
+		help = "Use FlareSolverr url to bypass Cloudflare"
+	).default("")
+
+	val flareSolverrTimeout by option(
+		"--flaresolverr-timeout",
+		help = "FlareSolverr timeout in seconds"
+	).int().default(60)
+
+	val useFlareSolverrAsFallback by option(
+		"--flaresolverr-as-fallback",
+		help = "Use FlareSolverr response as fallback"
+	).flag(default = false)
+
 	init {
 		completionOption()
 	}

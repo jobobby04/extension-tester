@@ -143,13 +143,10 @@ private fun performIteration(predicate: (String) -> Boolean = { true }): Boolean
 			logger.info { "RUN COMPLETED" }
 			return true
 		} catch (e: ExtensionTestException) {
-			logger.error { e.msg }
+			logger.error(e) { "Failed to run extension" }
 			return false
 		} catch (e: Exception) {
-			e.printStackTrace()
-			e.message?.let {
-				logger.error { it.substring(it.lastIndexOf("}") + 1) }
-			}
+			logger.error(e) { "Failed to run extension" }
 			return false
 		}
 	}

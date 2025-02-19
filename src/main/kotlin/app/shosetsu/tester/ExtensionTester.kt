@@ -387,7 +387,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 			try {
 				java.util.concurrent.TimeUnit.MILLISECONDS.sleep(500)
 			} catch (e: InterruptedException) {
-				e.printStackTrace()
+				logger.error(e) { "Thread interrupted" }
 			}
 		}
 	}

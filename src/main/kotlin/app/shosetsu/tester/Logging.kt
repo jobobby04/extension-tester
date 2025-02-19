@@ -9,7 +9,7 @@ inline fun setupLogging(level: Level? = Level.INFO) {
     // If you use a different backend, setting the level is up to you.
     if (level != null) System.setProperty("java.util.logging.ConsoleHandler.level", level.name)
     val formatKey = "java.util.logging.SimpleFormatter.format"
-    if (System.getProperty(formatKey) == null) System.setProperty(formatKey, "%4\$s - %5\$s %n")
+    if (System.getProperty(formatKey) == null) System.setProperty(formatKey, "%4\$s - %5\$s %n%4\$s: %5\$s%6\$s%")
 }
 
 val logger: System.Logger = System.getLogger("Extension Tester")

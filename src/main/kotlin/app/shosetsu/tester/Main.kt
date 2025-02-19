@@ -17,6 +17,7 @@
  */
 package app.shosetsu.tester
 
+import app.shosetsu.lib.ShosetsuSharedLib
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
 import app.shosetsu.lib.lua.ShosetsuLuaLib
@@ -88,7 +89,15 @@ fun setupLibs() {
 				},
 			)
 		}
-	}.build()
+	}.addInterceptor(
+		CloudflareInterceptor {
+			ShosetsuSharedLib.shosetsuHeaders = ShosetsuSharedLib
+				.shosetsuHeaders
+				.filterNot { it.first.equals("User-Agent", true) }
+				.plus("User-Agent" to it)
+				.toTypedArray()
+		}
+	).build()
 }
 
 @ExperimentalTime

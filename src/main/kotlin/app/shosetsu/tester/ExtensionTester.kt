@@ -396,7 +396,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	when (val listings = extension.listings()) {
 		is IExtension.Listing.Item -> testListing(listings)
 		is IExtension.Listing.List -> listings.getListings().forEach { l ->
-			if (l !is IExtension.Listing.Item) return
+			if (l !is IExtension.Listing.Item) return@forEach
 			testListing(l)
 		}
 	}

@@ -5,11 +5,11 @@ import java.util.logging.Level
 // this being inline ensures that the level is set before any loggers are created
 @Suppress("NOTHING_TO_INLINE")
 inline fun setupLogging(level: Level? = Level.INFO) {
-    // java.util.logging is the default backend for System.Logger.
-    // If you use a different backend, setting the level is up to you.
-    if (level != null) System.setProperty("java.util.logging.ConsoleHandler.level", level.name)
-    val formatKey = "java.util.logging.SimpleFormatter.format"
-    if (System.getProperty(formatKey) == null) System.setProperty(formatKey, "%4\$s - %5\$s %n")
+	// java.util.logging is the default backend for System.Logger.
+	// If you use a different backend, setting the level is up to you.
+	if (level != null) System.setProperty("java.util.logging.ConsoleHandler.level", level.name)
+	val formatKey = "java.util.logging.SimpleFormatter.format"
+	if (System.getProperty(formatKey) == null) System.setProperty(formatKey, "%4\$s - %5\$s %n")
 }
 
 val logger: System.Logger = System.getLogger("Extension Tester")

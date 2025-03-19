@@ -331,10 +331,11 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 			)
 
 			if (isIncrementing)
-				novels += getListing(HashMap(searchFiltersModel)
-					.apply {
-						this[PAGE_INDEX] = extension.startIndex + 1
-					})
+				novels += getListing(
+					HashMap(searchFiltersModel)
+						.apply {
+							this[PAGE_INDEX] = extension.startIndex + 1
+						})
 
 			if (Config.REPEAT) {
 				novels = getListing(
@@ -346,10 +347,11 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 				)
 
 				if (isIncrementing)
-					novels += getListing(HashMap(searchFiltersModel)
-						.apply {
-							this[PAGE_INDEX] = extension.startIndex + 1
-						})
+					novels += getListing(
+						HashMap(searchFiltersModel)
+							.apply {
+								this[PAGE_INDEX] = extension.startIndex + 1
+							})
 			}
 
 

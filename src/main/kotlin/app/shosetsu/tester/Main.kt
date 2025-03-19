@@ -96,7 +96,7 @@ fun main(args: Array<String>) {
 
 	if (WATCH) {
 		logger.info { "Watching for changes" }
-		DirectoryWatcher(DIRECTORY/"lib", DIRECTORY/"src").apply {
+		DirectoryWatcher(DIRECTORY / "lib", DIRECTORY / "src").apply {
 			onChange { paths ->
 				performIteration(paths.map { it.absolutePathString() }::contains)
 			}
@@ -111,10 +111,10 @@ class ExtensionTestException(val msg: String) : Exception(msg)
 private fun performIteration(predicate: (String) -> Boolean = { true }): Boolean {
 	outputTimedValue("MAIN") {
 		try {
-			val indexPath = DIRECTORY/"index.json"
+			val indexPath = DIRECTORY / "index.json"
 
 			if (GENERATE_INDEX) {
-				generateIndex(indexPath, DIRECTORY/"lib", DIRECTORY/"src")
+				generateIndex(indexPath, DIRECTORY / "lib", DIRECTORY / "src")
 			}
 
 			val repoIndex: RepoIndex = indexPath.inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)

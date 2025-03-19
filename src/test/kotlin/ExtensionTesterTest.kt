@@ -31,11 +31,13 @@ class ExtensionTesterTest {
 	@ExperimentalTime
 	fun testProgram() {
 		setupLogging(Level.FINER)
-		main(arrayOf(
-			"-r",
-			"../extensions/",
-			"../extensions/src/en/NovelFull.lua",
-			"../extensions/src/en/BoxNovel.lua"
-		))
+		main(
+			arrayOf(
+				"-r",
+				"../extensions/",
+				"../extensions/src/en/NovelFull.lua",
+				"../extensions/src/en/BoxNovel.lua"
+			)
+		)
 	}
 }

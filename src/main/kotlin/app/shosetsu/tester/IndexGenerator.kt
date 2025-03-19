@@ -14,7 +14,7 @@ import kotlin.io.path.*
 @OptIn(ExperimentalSerializationApi::class)
 private val writerJson = Json(RepoIndex.repositoryJsonParser) {
 	prettyPrint = true
-	prettyPrintIndent = "  "
+	prettyPrintIndent = "\t"
 }
 
 @OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)

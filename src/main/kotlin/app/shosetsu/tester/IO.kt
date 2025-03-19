@@ -37,7 +37,6 @@ fun ByteArray.detectLineEnding(): LineEnding {
 	}
 }
 
-@OptIn(ExperimentalPathApi::class)
 class DirectoryWatcher(vararg directories: Path) {
 	private val watchService = directories[0].fileSystem.newWatchService()
 	private val keys: MutableMap<WatchKey, Path> = mutableMapOf()

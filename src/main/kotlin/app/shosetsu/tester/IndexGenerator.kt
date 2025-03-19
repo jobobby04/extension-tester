@@ -17,7 +17,7 @@ private val writerJson = Json(RepoIndex.repositoryJsonParser) {
 	prettyPrintIndent = "\t"
 }
 
-@OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
+@OptIn(ExperimentalSerializationApi::class)
 fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
 	logger.info { "Generating index" }
 	val authors = mutableMapOf<String, MutableSet<String>>()

@@ -113,6 +113,7 @@ object Config : CliktCommand() {
 		help = "Run in CI mode, modifies `print-index`"
 	).flag(default = false)
 
+	@Suppress("MemberVisibilityCanBePrivate")
 	val VERBOSE by option(
 		"--verbose",
 		help = "Print out debug logs"

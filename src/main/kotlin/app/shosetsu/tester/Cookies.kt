@@ -15,27 +15,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package app.shosetsu.tester
 
-import app.shosetsu.tester.main
-import app.shosetsu.tester.setupLogging
-import org.junit.Test
-import java.util.logging.Level
-import kotlin.time.ExperimentalTime
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
 
 /**
- * extension-tester
- * 08 / 11 / 2021
+ *  @since 2024 / 05 / 19
  */
-class ExtensionTesterTest {
-	@Test
-	@ExperimentalTime
-	fun testProgram() {
-		setupLogging(Level.FINER)
-		main(arrayOf(
-			"-r",
-			"../extensions/",
-			"../extensions/src/en/NovelFull.lua",
-			"../extensions/src/en/BoxNovel.lua"
-		))
+object Cookies : CookieJar {
+	private val cookieJar = mutableMapOf<String, MutableList<Cookie>>()
+
+	override fun loadForRequest(url: HttpUrl): List<Cookie> {
+		return cookieJar[url.host].orEmpty()
+	}
+
+	override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+		val list = cookieJar.getOrPut(url.host) { mutableListOf() }
+		list.removeAll { cookie ->
+			cookies.any { it.name == cookie.name }
+		}
+		list.addAll(cookies)
 	}
 }

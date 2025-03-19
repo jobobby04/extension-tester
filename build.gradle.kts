@@ -1,6 +1,7 @@
 plugins {
-	kotlin("jvm") version "1.8.0"
-	id("com.github.gmazzo.buildconfig") version "3.1.0"
+	kotlin("jvm") version "2.0.20"
+	kotlin("plugin.serialization") version "2.0.20"
+	id("com.github.gmazzo.buildconfig") version "5.5.0"
 	application
 }
 
@@ -12,27 +13,26 @@ repositories {
 	maven("https://jitpack.io")
 }
 
-java {
-	sourceCompatibility = JavaVersion.VERSION_11
+kotlin {
+	jvmToolchain(11)
 }
 
 buildConfig {
-	buildConfigField("String", "VERSION", "\"$version\"")
+	buildConfigField("VERSION", version.toString())
 }
 
 dependencies {
 	testImplementation(kotlin("test"))
 
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+	implementation("com.github.ajalt.clikt:clikt:5.0.0") // for CLI
 
-	implementation("com.gitlab.shosetsuorg:kotlin-lib:3c204042a96efd691478820042b61625c0bc0f32")
+	implementation("com.gitlab.shosetsuorg:kotlin-lib:v1.4.1")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
-	implementation("org.jsoup:jsoup:1.15.3")
-	implementation("com.squareup.okhttp3:okhttp:4.10.0")
+	implementation("org.jsoup:jsoup:1.18.1")
+	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	implementation("org.luaj:luaj-jse:3.0.1")
-
-	implementation(kotlin("reflect"))
 }
 
 tasks.test {
@@ -40,13 +40,12 @@ tasks.test {
 }
 
 application {
-	mainClass.set("MainKt")
+	mainClass.set("app.shosetsu.tester.MainKt")
 }
 
 tasks.register<Jar>("assembleJar") {
-	val programVersion = archiveVersion.get()
-	archiveVersion.set("")
-
+	archiveFileName = "${project.name}.jar"
+	group = "build"
 
 	duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
@@ -54,7 +53,7 @@ tasks.register<Jar>("assembleJar") {
 		attributes(
 			"Main-Class" to application.mainClass,
 			"Implementation-Title" to "Gradle",
-			"Implementation-Version" to programVersion
+			"Implementation-Version" to project.version.toString()
 		)
 	}
 

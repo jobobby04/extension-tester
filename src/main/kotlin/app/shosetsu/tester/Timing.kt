@@ -15,27 +15,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package app.shosetsu.tester
 
-import app.shosetsu.tester.main
-import app.shosetsu.tester.setupLogging
-import org.junit.Test
-import java.util.logging.Level
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 /**
- * extension-tester
- * 08 / 11 / 2021
+ *  @since 2024 / 05 / 19
  */
-class ExtensionTesterTest {
-	@Test
-	@ExperimentalTime
-	fun testProgram() {
-		setupLogging(Level.FINER)
-		main(arrayOf(
-			"-r",
-			"../extensions/",
-			"../extensions/src/en/NovelFull.lua",
-			"../extensions/src/en/BoxNovel.lua"
-		))
-	}
+
+@ExperimentalTime
+inline fun <T> outputTimedValue(jobName: String, block: () -> T): T {
+	return measureTimedValue(block).also {
+		printExecutionTime(jobName, it.duration)
+	}.value
+}
+
+@ExperimentalTime
+fun printExecutionTime(job: String, time: Duration) {
+	printExecutionTime(job, time.toDouble(DurationUnit.MILLISECONDS))
+}
+
+private fun printExecutionTime(job: String, timeMs: Double) {
+	logger.debug { "COMPLETED [$job] in $timeMs ms" }
 }

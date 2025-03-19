@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.doomsdayrs.lib"
-version = "1.1.2"
+version = "2.0.0"
 
 repositories {
 	mavenCentral()

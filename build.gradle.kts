@@ -5,7 +5,7 @@ plugins {
 	application
 }
 
-group = "com.github.doomsdayrs.lib"
+group = "app.shosetsu"
 version = "2.0.0"
 
 repositories {

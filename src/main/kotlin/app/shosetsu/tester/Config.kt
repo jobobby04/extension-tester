@@ -29,7 +29,6 @@ import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
-import com.github.doomsdayrs.lib.extension_tester.BuildConfig
 import java.nio.file.Path
 import java.util.*
 import java.util.logging.Level

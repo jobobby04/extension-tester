@@ -1,3 +1,3 @@
 
-rootProject.name = "extension-tester"
+rootProject.name = "tester"
 

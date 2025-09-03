@@ -101,7 +101,7 @@ fun showNovel(ext: IExtension, novelURL: String) {
 			with(passage.decodeToString()) {
 				if (length < 25) "Result: $this"
 				else "$length chars long result: " +
-					"${take(10)} [...] ${takeLast(10)}"
+						"${take(10)} [...] ${takeLast(10)}"
 			}
 		}
 }
@@ -178,7 +178,7 @@ fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
 			with(passage.decodeToString()) {
 				if (length < 25) "Result: $this"
 				else "$length chars long result: " +
-					"${take(10)} [...] ${takeLast(10)}"
+						"${take(10)} [...] ${takeLast(10)}"
 			}
 		}
 	}
@@ -252,7 +252,7 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		}.mapify()
 
 	val searchFiltersModel: Map<Int, *> =
-		extension.getCatalogueFilters(null).toList().also {
+		extension.searchFiltersModel.toList().also {
 			logger.info { "SearchFilters Model:" }
 			it.printOut()
 		}.mapify()
@@ -313,73 +313,43 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		{ "Extension imageURL is missing" }
 	)
 
-	fun testListing(l: IExtension.Listing.Item) {
+	// Test each listing
+	extension.listings.forEach { l ->
 		with(l) {
 			logger.info {
 				"\n-------- Listing \"${name}\" " +
-					if (isIncrementing) "(incrementing)" else "" +
-						" --------"
+						if (isIncrementing) "(incrementing)" else "" +
+								" --------"
 			}
 
-			var novels = getListing?.let {
-				it(
-					HashMap(searchFiltersModel).apply {
-						this[PAGE_INDEX] =
-							if (isIncrementing) extension.startIndex else null
-						this[LISTING_INDEX] = link
-					}
-				)
-			} ?: extension.getCatalogue(
+			var novels = getListing(
 				HashMap(searchFiltersModel).apply {
 					this[PAGE_INDEX] =
 						if (isIncrementing) extension.startIndex else null
-					this[LISTING_INDEX] = link
+
 				}
 			)
 
 			if (isIncrementing)
-				novels += getListing?.let {
-					it(HashMap(searchFiltersModel)
-						.apply {
-							this[PAGE_INDEX] = extension.startIndex + 1
-							this[LISTING_INDEX] = link
-						})
-				} ?: extension.getCatalogue(
-					HashMap(searchFiltersModel).apply {
+				novels += getListing(HashMap(searchFiltersModel)
+					.apply {
 						this[PAGE_INDEX] = extension.startIndex + 1
-						this[LISTING_INDEX] = link
-					}
-				)
+					})
 
 			if (Config.REPEAT) {
-				novels = getListing?.let {
-					it(
-						HashMap(searchFiltersModel).apply {
-							this[PAGE_INDEX] =
-								if (isIncrementing) extension.startIndex else null
-							this[LISTING_INDEX] = link
-						}
-					)
-				} ?: extension.getCatalogue(
+				novels = getListing(
 					HashMap(searchFiltersModel).apply {
-						this[PAGE_INDEX] = if (isIncrementing) extension.startIndex else null
-						this[LISTING_INDEX] = link
+						this[PAGE_INDEX] =
+							if (isIncrementing) extension.startIndex else null
+
 					}
 				)
 
 				if (isIncrementing)
-					novels += getListing?.let {
-						it(HashMap(searchFiltersModel)
-							.apply {
-								this[PAGE_INDEX] = extension.startIndex + 1
-								this[LISTING_INDEX] = link
-							})
-					} ?: extension.getCatalogue(
-						HashMap(searchFiltersModel).apply {
+					novels += getListing(HashMap(searchFiltersModel)
+						.apply {
 							this[PAGE_INDEX] = extension.startIndex + 1
-							this[LISTING_INDEX] = link
-						}
-					)
+						})
 			}
 
 
@@ -392,19 +362,10 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		}
 	}
 
-	// Test each listing
-	when (val listings = extension.listings()) {
-		is IExtension.Listing.Item -> testListing(listings)
-		is IExtension.Listing.List -> listings.getListings().forEach { l ->
-			if (l !is IExtension.Listing.Item) return
-			testListing(l)
-		}
-	}
-
 	if (extension.hasSearch) {
 		logger.info { "\n-------- Search --------" }
 
-		val filters = flattenFilters(extension.getCatalogueFilters(null).toList()).associateBy { it.id }
+		val filters = flattenFilters(extension.searchFiltersModel.toList()).associateBy { it.id }
 
 		FILTERS.forEach { (id, state) ->
 			val filter = filters.getOrElse(id) { null }
@@ -431,11 +392,10 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		showListing(
 			extension,
 			outputTimedValue("ext.search") {
-				extension.getCatalogue(
+				extension.search(
 					HashMap(searchFiltersModel).apply {
 						set(QUERY_INDEX, SEARCH_VALUE)
 						set(PAGE_INDEX, extension.startIndex)
-						set(LISTING_INDEX, null)
 						putAll(filtersChanged)
 					}
 				)
@@ -445,11 +405,10 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 			showListing(
 				extension,
 				outputTimedValue("ext.search") {
-					extension.getCatalogue(
+					extension.search(
 						HashMap(searchFiltersModel).apply {
 							set(QUERY_INDEX, SEARCH_VALUE)
 							set(PAGE_INDEX, extension.startIndex + 1)
-							set(LISTING_INDEX, null)
 							putAll(filtersChanged)
 						}
 					)

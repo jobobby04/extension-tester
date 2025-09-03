@@ -120,10 +120,15 @@ object Config : CliktCommand() {
 	).flag(default = false)
 
 	/**
-	 * Novel to load via the extension, useful for novel cases.
+	 * Items to load via the extension, useful for novel cases.
 	 * default is empty, thus ignored.
 	 */
-	val SPECIFIC_NOVEL_URL by option(
+    val SPECIFIC_LISTING_URL by option(
+        "--target-listing",
+        help = "Target a specific Listing"
+    ).default("")
+
+    val SPECIFIC_NOVEL_URL by option(
 		"--target-novel",
 		help = "Target a specific novel"
 	).default("")

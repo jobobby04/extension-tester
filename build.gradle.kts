@@ -13,10 +13,6 @@ repositories {
 	maven("https://jitpack.io")
 }
 
-kotlin {
-	jvmToolchain(11)
-}
-
 buildConfig {
 	buildConfigField("VERSION", version.toString())
 }
@@ -28,7 +24,7 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 	implementation("com.github.ajalt.clikt:clikt:5.0.0") // for CLI
 
-	implementation("com.gitlab.shosetsuorg:kotlin-lib:v1.4.1")
+	implementation("com.gitlab.JFronny:kotlin-lib:334fb84d1666cc0ee6a92d6669fc76d9df8dc99f")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
 	implementation("org.jsoup:jsoup:1.18.1")

@@ -101,7 +101,7 @@ application {
 }
 
 val assembleJar by tasks.registering(Jar::class) {
-	archiveFileName = "${project.name}.jar"
+	archiveFileName = "extension-tester.jar"
 	group = "build"
 
 	duplicatesStrategy = DuplicatesStrategy.INCLUDE

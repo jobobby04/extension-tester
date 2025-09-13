@@ -56,7 +56,7 @@ version = System.getenv("CI_COMMIT_TAG")?.trimStart('v') ?: Git.open(projectDir)
 	val dirty = hasNewCommits || git.diff().call().isNotEmpty()
 
 	// If the branch is not a main development branch (=a feature branch), also append the branch name
-	val branchName = System.getenv("CI_DEFAULT_BRANCH") ?: git.repository.branch ?: "unknown"
+	val branchName = System.getenv("CI_COMMIT_BRANCH") ?: git.repository.branch ?: "unknown"
 
 	name + (if (branchName in setOf("main", "master", "development")) "" else "+$branchName") + (if (dirty) "-SNAPSHOT" else "")
 }

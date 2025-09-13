@@ -1,7 +1,7 @@
 plugins {
-	kotlin("jvm") version "2.1.10"
-	kotlin("plugin.serialization") version "2.1.10"
-	id("com.github.gmazzo.buildconfig") version "5.5.0"
+	kotlin("jvm") version "2.2.0"
+	kotlin("plugin.serialization") version "2.2.0"
+	id("com.github.gmazzo.buildconfig") version "5.6.7"
 	application
 }
 
@@ -14,7 +14,7 @@ repositories {
 }
 
 kotlin {
-	jvmToolchain(11)
+	jvmToolchain(21)
 }
 
 buildConfig {
@@ -24,13 +24,13 @@ buildConfig {
 dependencies {
 	testImplementation(kotlin("test"))
 
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-	implementation("com.github.ajalt.clikt:clikt:5.0.0") // for CLI
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+	implementation("com.github.ajalt.clikt:clikt:5.0.3") // for CLI
 
 	implementation("com.gitlab.shosetsuorg:kotlin-lib:v1.4.1")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
-	implementation("org.jsoup:jsoup:1.18.1")
+	implementation("org.jsoup:jsoup:1.21.1")
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	implementation("org.luaj:luaj-jse:3.0.1")
 }

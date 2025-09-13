@@ -63,6 +63,11 @@ object Config : CliktCommand() {
 		help = "Watch the directory for changes"
 	).flag(default = false)
 
+    val HOST by option(
+        "--host",
+        help = "Host this directory on a local web server for testing"
+    ).flag(default = false)
+
 	val SEARCH_VALUE by option(
 		"--target-query",
 		help = "Target a specific query"
@@ -194,7 +199,7 @@ object Config : CliktCommand() {
 			}
 		}
 
-		if (!(CI_MODE && VALIDATE_INDEX || PRINT_REPO_INDEX || GENERATE_INDEX) && SOURCES.isEmpty()) {
+		if (!(CI_MODE && VALIDATE_INDEX || PRINT_REPO_INDEX || GENERATE_INDEX || HOST) && SOURCES.isEmpty()) {
 			logger.error { "No extension provided" }
 			exitProcess(1)
 		}
@@ -203,6 +208,11 @@ object Config : CliktCommand() {
 			logger.error { "Cannot run in CI mode and watch mode" }
 			exitProcess(1)
 		}
+
+        if (CI_MODE && HOST) {
+            logger.error { "Cannot run in CI mode and host mode" }
+            exitProcess(1)
+        }
 
 		val headersFile = headersFile
 

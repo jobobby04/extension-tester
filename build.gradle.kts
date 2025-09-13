@@ -84,7 +84,7 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 	implementation("com.github.ajalt.clikt:clikt:5.0.0") // for CLI
 
-	implementation("app.shosetsu.lib:kotlin-lib:1.4.1-SNAPSHOT")
+	implementation("app.shosetsu.lib:kotlin-lib:1.4.1")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
 	implementation("org.jsoup:jsoup:1.18.1")

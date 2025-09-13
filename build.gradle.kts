@@ -153,3 +153,9 @@ publishing {
 		}
 	}
 }
+
+val deploy by tasks.registering {
+	group = "publishing"
+	description = "Performs the tasks necessary to deploy the library"
+	dependsOn(tasks.publish)
+}

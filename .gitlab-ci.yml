@@ -10,7 +10,7 @@
 # https://gradle.org/
 # https://github.com/gradle/gradle
 
-image: gradle:jdk21-alpine
+image: gradle:8.12.0-jdk21
 
 # Disable the Gradle daemon for Continuous Integration servers as correctness
 # is usually a priority over speed in CI environments. Using a fresh
@@ -20,12 +20,11 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
 before_script:
-  - GRADLE_USER_HOME="$(pwd)/.gradle"
-  - export GRADLE_USER_HOME
+  - export GRADLE_USER_HOME="$(pwd)/.gradle"
 
 build:
   stage: build
-  script: gradle --build-cache assembleJar
+  script: gradle --build-cache assemble assembleJar
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -46,7 +45,7 @@ build:
 #      - build
 #      - .gradle
 
-#deploy:
-#  stage: deploy
-#  script: echo "Define your deployment script!"
-#  environment: production
+deploy:
+  stage: deploy
+  script:
+    - gradle --build-cache deploy

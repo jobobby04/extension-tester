@@ -24,20 +24,25 @@ import app.shosetsu.lib.lua.shosetsuGlobals
 import app.shosetsu.tester.Config.CI_MODE
 import app.shosetsu.tester.Config.DIRECTORY
 import app.shosetsu.tester.Config.GENERATE_INDEX
+import app.shosetsu.tester.Config.HOST
 import app.shosetsu.tester.Config.PRINT_REPO_INDEX
 import app.shosetsu.tester.Config.SOURCES
 import app.shosetsu.tester.Config.VALIDATE_INDEX
 import app.shosetsu.tester.Config.WATCH
 import com.github.ajalt.clikt.core.main
+import com.sun.net.httpserver.Filter
+import com.sun.net.httpserver.HttpServer
+import com.sun.net.httpserver.SimpleFileServer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
 import org.luaj.vm2.LuaValue
 import java.io.File
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.div
-import kotlin.io.path.inputStream
+import java.net.InetSocketAddress
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import kotlin.io.path.*
 import kotlin.system.exitProcess
 import kotlin.time.ExperimentalTime
 
@@ -94,9 +99,29 @@ fun main(args: Array<String>) {
 		exitProcess(1)
 	}
 
+    if (HOST) {
+        logger.info { "Hosting directory on http://localhost:8000" }
+        val formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z")
+        fun dateTime() = OffsetDateTime.now().format(formatter)
+        HttpServer.create(
+            InetSocketAddress(8000),
+            0,
+            "/",
+            SimpleFileServer.createFileHandler(Path(".").absolute()),
+            Filter.afterHandler("HttpExchange OutputFilter") {
+                logger.info {
+                    // https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format
+                    val prefix = "${it.remoteAddress.hostString} - - [${dateTime()}]"
+                    val main = "${it.requestMethod} ${it.requestURI} ${it.protocol}"
+                    "$prefix \"$main\" ${it.responseCode} -"
+                }
+            }
+        ).start()
+    }
+
 	if (WATCH) {
 		logger.info { "Watching for changes" }
-		DirectoryWatcher(DIRECTORY/"lib", DIRECTORY/"src").apply {
+		DirectoryWatcher(DIRECTORY / "lib", DIRECTORY / "src").apply {
 			onChange { paths ->
 				performIteration(paths.map { it.absolutePathString() }::contains)
 			}
@@ -111,10 +136,10 @@ class ExtensionTestException(val msg: String) : Exception(msg)
 private fun performIteration(predicate: (String) -> Boolean = { true }): Boolean {
 	outputTimedValue("MAIN") {
 		try {
-			val indexPath = DIRECTORY/"index.json"
+			val indexPath = DIRECTORY / "index.json"
 
 			if (GENERATE_INDEX) {
-				generateIndex(indexPath, DIRECTORY/"lib", DIRECTORY/"src")
+				generateIndex(indexPath, DIRECTORY / "lib", DIRECTORY / "src")
 			}
 
 			val repoIndex: RepoIndex = indexPath.inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)

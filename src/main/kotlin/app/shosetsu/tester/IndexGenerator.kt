@@ -13,90 +13,92 @@ import kotlin.io.path.*
 
 @OptIn(ExperimentalSerializationApi::class)
 private val writerJson = Json(RepoIndex.repositoryJsonParser) {
-    prettyPrint = true
-    prettyPrintIndent = "  "
+	prettyPrint = true
+	prettyPrintIndent = "\t"
 }
 
-@OptIn(ExperimentalSerializationApi::class, ExperimentalPathApi::class)
+@OptIn(ExperimentalSerializationApi::class)
 fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
-    logger.info { "Generating index" }
-    val authors = mutableMapOf<String, MutableSet<String>>()
-    fun addAuthor(author: String, work: String) = author.split(", ")
-        .forEach { authors.getOrPut(it) { TreeSet() }.add(work) }
-    val illegalFileEndings = mutableSetOf<Path>()
-    val index = RepoIndex(
-        libraries = libraryPath.walk()
-            .map {
-                if (it.extension != "lua" || !it.isRegularFile()) {
-                    logger.warn { "Skipping non-lua file: $it" }
-                    return@map null
-                }
-                val meta = LuaLibrary(it)
-                addAuthor(meta.libMetaData.author, it.nameWithoutExtension)
-                val data = it.readBytes()
-                if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
-                RepoLibrary(
-                    name = it.nameWithoutExtension,
-                    version = meta.libMetaData.version,
-                    url = null,
-                    hash = data.sha256sum()
-                )
-            }
-            .filterNotNull()
-            .sortedBy { it.name }
-            .toList(),
-        extensions = scriptPath.walk()
-            .map {
-                if (it.extension != "lua" || !it.isRegularFile()) {
-                    logger.warn { "Skipping non-lua file: $it" }
-                    return@map null
-                }
-                val relativePath = scriptPath.relativize(it)
-                if (relativePath.nameCount != 2) {
-                    logger.warn { "Skipping file at unexpected location: $it" }
-                    return@map null
-                }
-                val meta = LuaExtension(it)
-                addAuthor(meta.exMetaData.author, meta.name)
-                val data = it.readBytes()
-                if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
-                RepoExtension(
-                    id = meta.exMetaData.id,
-                    name = meta.name,
-                    fileName = it.nameWithoutExtension,
-                    imageURL = meta.imageURL,
-                    lang = relativePath.getName(0).toString(),
-                    version = meta.exMetaData.version,
-                    libVersion = meta.exMetaData.libVersion,
-                    md5 = data.sha256sum(), // confusing, but we use sha256 for the hash
-                    type = ExtensionType.LuaScript
-                )
-            }
-            .filterNotNull()
-            .sortedBy { it.id }
-            .toList(),
-        styles = emptyList(), //TODO: add styles
-        scripts = emptyList(), //TODO: add scripts
-        authors = authors.entries
-            .sortedBy { it.key }
-            .sortedByDescending { it.value.size }
-            .map {
-                RepoAuthor(
-                    id = it.key.hashCode(),
-                    name = it.key,
-                    description = "Worked on ${it.value.joinToString(", ")}"
-                )
-            }
-    )
-    if (illegalFileEndings.isNotEmpty()) {
-        logger.warn { """
+	logger.info { "Generating index" }
+	val authors = mutableMapOf<String, MutableSet<String>>()
+	fun addAuthor(author: String, work: String) = author.split(", ")
+		.forEach { authors.getOrPut(it) { TreeSet() }.add(work) }
+
+	val illegalFileEndings = mutableSetOf<Path>()
+	val index = RepoIndex(
+		libraries = libraryPath.walk()
+			.map {
+				if (it.extension != "lua" || !it.isRegularFile()) {
+					logger.warn { "Skipping non-lua file: $it" }
+					return@map null
+				}
+				val meta = LuaLibrary(it)
+				addAuthor(meta.libMetaData.author, it.nameWithoutExtension)
+				val data = it.readBytes()
+				if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
+				RepoLibrary(
+					name = it.nameWithoutExtension,
+					version = meta.libMetaData.version,
+					url = null,
+					hash = data.sha256sum()
+				)
+			}
+			.filterNotNull()
+			.sortedBy { it.name }
+			.toList(),
+		extensions = scriptPath.walk()
+			.map {
+				if (it.extension != "lua" || !it.isRegularFile()) {
+					logger.warn { "Skipping non-lua file: $it" }
+					return@map null
+				}
+				val relativePath = scriptPath.relativize(it)
+				if (relativePath.nameCount != 2) {
+					logger.warn { "Skipping file at unexpected location: $it" }
+					return@map null
+				}
+				val meta = LuaExtension(it)
+				addAuthor(meta.exMetaData.author, meta.name)
+				val data = it.readBytes()
+				if (data.detectLineEnding() != LineEnding.LF) illegalFileEndings.add(it)
+				RepoExtension(
+					id = meta.exMetaData.id,
+					name = meta.name,
+					fileName = it.nameWithoutExtension,
+					imageURL = meta.imageURL,
+					lang = relativePath.getName(0).toString(),
+					version = meta.exMetaData.version,
+					libVersion = meta.exMetaData.libVersion,
+					md5 = data.sha256sum(), // confusing, but we use sha256 for the hash
+					type = ExtensionType.LuaScript
+				)
+			}
+			.filterNotNull()
+			.sortedBy { it.id }
+			.toList(),
+		styles = emptyList(), //TODO: add styles
+		scripts = emptyList(), //TODO: add scripts
+		authors = authors.entries
+			.sortedBy { it.key }
+			.sortedByDescending { it.value.size }
+			.map {
+				RepoAuthor(
+					id = it.key.hashCode(),
+					name = it.key,
+					description = "Worked on ${it.value.joinToString(", ")}"
+				)
+			}
+	)
+	if (illegalFileEndings.isNotEmpty()) {
+		logger.warn {
+			"""
             The following files have illegal (non-LF) line endings: $illegalFileEndings
             If you notice unintended changes in their checksums, this is likely the cause.
             This may have been caused by an outdated clone of the repository or an unsupported text editor.
             Please try to clone the repository again or use a different text editor.
             For further information, this may be helpful: https://stackoverflow.com/questions/10418975/how-to-change-line-ending-settings
             """.trimIndent().trim()
-        }
-    }
-    indexPath.outputStream().use { writerJson.encodeToStream(index, it) }
+		}
+	}
+	indexPath.outputStream().use { writerJson.encodeToStream(index, it) }
 }

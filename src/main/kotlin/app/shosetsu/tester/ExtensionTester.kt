@@ -33,7 +33,6 @@ import app.shosetsu.tester.Config.SEARCH_VALUE
 import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
 import app.shosetsu.tester.Config.SPECIFIC_NOVEL_URL
 import app.shosetsu.tester.Config.VALIDATE_METADATA
-import kotlinx.serialization.encodeToString
 import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -331,10 +330,11 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 			)
 
 			if (isIncrementing)
-				novels += getListing(HashMap(searchFiltersModel)
-					.apply {
-						this[PAGE_INDEX] = extension.startIndex + 1
-					})
+				novels += getListing(
+					HashMap(searchFiltersModel)
+						.apply {
+							this[PAGE_INDEX] = extension.startIndex + 1
+						})
 
 			if (Config.REPEAT) {
 				novels = getListing(
@@ -346,10 +346,11 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 				)
 
 				if (isIncrementing)
-					novels += getListing(HashMap(searchFiltersModel)
-						.apply {
-							this[PAGE_INDEX] = extension.startIndex + 1
-						})
+					novels += getListing(
+						HashMap(searchFiltersModel)
+							.apply {
+								this[PAGE_INDEX] = extension.startIndex + 1
+							})
 			}
 
 

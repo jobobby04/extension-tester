@@ -104,7 +104,7 @@ val assembleJar by tasks.registering(Jar::class) {
 	archiveFileName = "extension-tester.jar"
 	group = "build"
 
-	duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	duplicatesStrategy = DuplicatesStrategy.FAIL
 
 	manifest {
 		attributes(
@@ -117,7 +117,11 @@ val assembleJar by tasks.registering(Jar::class) {
 	from(sourceSets.main.get().output)
 	dependsOn(configurations.runtimeClasspath)
 	from(
-		configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+		configurations.runtimeClasspath.get()
+			.filter { it.name.endsWith("jar") }
+			.map { zipTree(it).matching {
+				exclude("META-INF/**")
+			} }
 	)
 }
 

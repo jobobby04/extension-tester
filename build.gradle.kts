@@ -10,8 +10,8 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 plugins {
-	kotlin("jvm") version "2.2.0"
-	kotlin("plugin.serialization") version "2.2.0"
+	kotlin("jvm") version "2.3.20"
+	kotlin("plugin.serialization") version "2.3.20"
 	id("com.github.gmazzo.buildconfig") version "5.6.7"
 	application
     `maven-publish`
@@ -62,6 +62,13 @@ version = System.getenv("CI_COMMIT_TAG")?.trimStart('v') ?: Git.open(projectDir)
 }
 
 repositories {
+	mavenLocal()
+	maven("https://gitlab.com/api/v4/projects/61884451/packages/maven") {
+		name = "stringly fork"
+		content {
+			includeGroupAndSubgroups("app.shosetsu")
+		}
+	}
 	maven("https://gitlab.com/api/v4/groups/12585416/-/packages/maven") {
 		content {
 			includeGroupAndSubgroups("app.shosetsu")
@@ -81,14 +88,14 @@ buildConfig {
 dependencies {
 	testImplementation(kotlin("test"))
 
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-	implementation("com.github.ajalt.clikt:clikt:5.0.3") // for CLI
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+	implementation("com.github.ajalt.clikt:clikt:5.1.0") // for CLI
 
-	implementation("app.shosetsu.lib:kotlin-lib:1.4.1")
+	implementation("app.shosetsu.lib:kotlin-lib:1.4.1+listing-stringly-SNAPSHOT")
 	implementation(kotlin("stdlib"))
 	implementation(kotlin("stdlib-jdk8"))
-	implementation("org.jsoup:jsoup:1.21.1")
-	implementation("com.squareup.okhttp3:okhttp:4.12.0")
+	implementation("org.jsoup:jsoup:1.22.1")
+	implementation("com.squareup.okhttp3:okhttp:5.3.2")
 	implementation("org.luaj:luaj-jse:3.0.1")
 }
 

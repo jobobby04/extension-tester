@@ -31,6 +31,7 @@ import app.shosetsu.tester.Config.PRINT_NOVEL_STATS
 import app.shosetsu.tester.Config.PRINT_PASSAGES
 import app.shosetsu.tester.Config.SEARCH_VALUE
 import app.shosetsu.tester.Config.SPECIFIC_CHAPTER
+import app.shosetsu.tester.Config.SPECIFIC_LISTING_URL
 import app.shosetsu.tester.Config.SPECIFIC_NOVEL_URL
 import app.shosetsu.tester.Config.VALIDATE_METADATA
 import okhttp3.Request
@@ -220,6 +221,119 @@ fun verifyImageLoad(
 	}
 }
 
+@OptIn(ExperimentalTime::class)
+fun testListing(extension: IExtension, l: IExtension.Listing.Item) {
+	with(l) {
+		logger.info {
+			"\n-------- Listing \"${name}\" " +
+					if (isIncrementing) "(incrementing)" else "" +
+							" --------"
+		}
+
+		val searchFiltersModel: Map<Int, *> =
+			l.search?.filters.orEmpty().toList().also {
+				logger.info { "SearchFilters Model:" }
+				it.printOut()
+			}.mapify()
+
+		var novels = l.getListing(
+			HashMap(searchFiltersModel),
+			extension.startIndex
+		)
+
+		if (isIncrementing)
+			novels += l.getListing(
+				HashMap(searchFiltersModel),
+				extension.startIndex + 1
+			)
+
+		if (Config.REPEAT) {
+			novels = l.getListing(
+				HashMap(searchFiltersModel),
+				extension.startIndex
+			)
+
+			if (isIncrementing)
+				novels += l.getListing(
+					HashMap(searchFiltersModel),
+					extension.startIndex + 1
+				)
+		}
+
+
+		showListing(extension, novels)
+
+		searchListing(extension, l)
+		try {
+			MILLISECONDS.sleep(500)
+		} catch (e: InterruptedException) {
+			e.printStackTrace()
+		}
+	}
+}
+
+@OptIn(ExperimentalTime::class)
+fun searchListing(extension: IExtension, l: IExtension.Listing) {
+	val search = l.search ?: return
+	logger.info { "\n-------- Search --------" }
+
+	val searchFiltersModel: Map<Int, *> =
+		search.filters.toList().also {
+			logger.info { "SearchFilters Model:" }
+			it.printOut()
+		}.mapify()
+
+	val filters = flattenFilters(search.filters.toList()).associateBy { it.id }
+
+	FILTERS.forEach { (id, state) ->
+		val filter = filters.getOrElse(id) { null }
+
+		when (filter) {
+			is Filter.Checkbox -> filter.state = state.toBooleanStrict()
+			is Filter.Dropdown -> filter.state = state.toInt()
+			is Filter.Password -> filter.state = state
+			is Filter.RadioGroup -> filter.state = state.toInt()
+			is Filter.Switch -> filter.state = state.toBooleanStrict()
+			is Filter.Text -> filter.state = state
+			is Filter.TriState -> filter.state = state.toInt()
+
+			is Filter.FList,
+			is Filter.Group<*>,
+			is Filter.Header,
+			Filter.Separator,
+			null -> Unit
+		}
+	}
+
+	val filtersChanged = filters.values.toList().mapify()
+	showListing(
+		extension,
+		outputTimedValue("ext.search") {
+			search.getListing(
+				SEARCH_VALUE,
+				HashMap(searchFiltersModel).apply {
+					putAll(filtersChanged)
+				},
+				extension.startIndex
+			) ?: arrayOf()
+		}
+	)
+	if (search.isIncrementing) {
+		showListing(
+			extension,
+			outputTimedValue("ext.search") {
+				search.getListing(
+					SEARCH_VALUE,
+					HashMap(searchFiltersModel).apply {
+						putAll(filtersChanged)
+					},
+					extension.startIndex + 1
+				) ?: arrayOf()
+			}
+		)
+	}
+}
+
 /**
  *  @since 2024 / 05 / 18
  */
@@ -244,15 +358,19 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		return
 	}
 
+	if (SPECIFIC_LISTING_URL.isNotBlank()) {
+		val listing = extension.getListing(SPECIFIC_LISTING_URL) as? IExtension.Listing.Item
+		if (listing != null) {
+			testListing(extension, listing)
+		} else {
+			logger.error { "Failed to test listing: $listing, invalid url" }
+		}
+		return
+	}
+
 	val settingsModel: Map<Int, *> =
 		extension.settingsModel.toList().also {
 			logger.info { "Settings model:" }
-			it.printOut()
-		}.mapify()
-
-	val searchFiltersModel: Map<Int, *> =
-		extension.searchFiltersModel.toList().also {
-			logger.info { "SearchFilters Model:" }
 			it.printOut()
 		}.mapify()
 
@@ -261,7 +379,6 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	logger.info { "BaseURL  : ${extension.baseURL}" }
 	logger.info { "Image    : ${extension.imageURL}" }
 	logger.info { "Settings : $settingsModel" }
-	logger.info { "Filters  : $searchFiltersModel" }
 	if (PRINT_METADATA)
 		logger.info {
 			"MetaData : ${
@@ -312,110 +429,24 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		{ "Extension imageURL is missing" }
 	)
 
-	// Test each listing
-	extension.listings.forEach { l ->
-		with(l) {
-			logger.info {
-				"\n-------- Listing \"${name}\" " +
-						if (isIncrementing) "(incrementing)" else "" +
-								" --------"
-			}
-
-			var novels = getListing(
-				HashMap(searchFiltersModel).apply {
-					this[PAGE_INDEX] =
-						if (isIncrementing) extension.startIndex else null
-
-				}
-			)
-
-			if (isIncrementing)
-				novels += getListing(
-					HashMap(searchFiltersModel)
-						.apply {
-							this[PAGE_INDEX] = extension.startIndex + 1
-						})
-
-			if (Config.REPEAT) {
-				novels = getListing(
-					HashMap(searchFiltersModel).apply {
-						this[PAGE_INDEX] =
-							if (isIncrementing) extension.startIndex else null
-
-					}
-				)
-
-				if (isIncrementing)
-					novels += getListing(
-						HashMap(searchFiltersModel)
-							.apply {
-								this[PAGE_INDEX] = extension.startIndex + 1
-							})
-			}
-
-
-			showListing(extension, novels)
-			try {
-				java.util.concurrent.TimeUnit.MILLISECONDS.sleep(500)
-			} catch (e: InterruptedException) {
-				e.printStackTrace()
+	// Test each top-level listing
+	fun getListingItem(listing: IExtension.Listing): IExtension.Listing.Item? {
+		return when (listing) {
+			is IExtension.Listing.Item -> listing
+			is IExtension.Listing.List -> listing.getListings().firstNotNullOfOrNull { l ->
+				getListingItem(l)
 			}
 		}
 	}
 
-	if (extension.hasSearch) {
-		logger.info { "\n-------- Search --------" }
+	val listingItem = getListingItem(extension.getListing(null))
+	if (listingItem != null) {
+		testListing(extension, listingItem)
+	}
 
-		val filters = flattenFilters(extension.searchFiltersModel.toList()).associateBy { it.id }
-
-		FILTERS.forEach { (id, state) ->
-			val filter = filters.getOrElse(id) { null }
-
-			when (filter) {
-				is Filter.Checkbox -> filter.state = state.toBooleanStrict()
-				is Filter.Dropdown -> filter.state = state.toInt()
-				is Filter.Password -> filter.state = state
-				is Filter.RadioGroup -> filter.state = state.toInt()
-				is Filter.Switch -> filter.state = state.toBooleanStrict()
-				is Filter.Text -> filter.state = state
-				is Filter.TriState -> filter.state = state.toInt()
-
-				is Filter.FList,
-				is Filter.Group<*>,
-				is Filter.Header,
-				Filter.Separator,
-				null -> Unit
-			}
-		}
-
-		val filtersChanged = filters.values.toList().mapify()
-
-		showListing(
-			extension,
-			outputTimedValue("ext.search") {
-				extension.search(
-					HashMap(searchFiltersModel).apply {
-						set(QUERY_INDEX, SEARCH_VALUE)
-						set(PAGE_INDEX, extension.startIndex)
-						putAll(filtersChanged)
-					}
-				)
-			}
-		)
-		if (extension.isSearchIncrementing) {
-			showListing(
-				extension,
-				outputTimedValue("ext.search") {
-					extension.search(
-						HashMap(searchFiltersModel).apply {
-							set(QUERY_INDEX, SEARCH_VALUE)
-							set(PAGE_INDEX, extension.startIndex + 1)
-							putAll(filtersChanged)
-						}
-					)
-				}
-			)
-		}
+	val globalSearch = extension.getListing(null).search
+	if (globalSearch != null) {
+		searchListing(extension, extension.getListing(null))
 	}
 
 	MILLISECONDS.sleep(500)

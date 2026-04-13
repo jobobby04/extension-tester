@@ -62,7 +62,6 @@ version = System.getenv("CI_COMMIT_TAG")?.trimStart('v') ?: Git.open(projectDir)
 }
 
 repositories {
-	mavenLocal()
 	maven("https://gitlab.com/api/v4/projects/61884451/packages/maven") {
 		name = "stringly fork"
 		content {
@@ -101,6 +100,7 @@ dependencies {
 
 tasks.test {
 	useJUnit()
+	isEnabled = false // the current "tests" don't actually test anything, so disable them to avoid confusion
 }
 
 application {

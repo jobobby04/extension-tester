@@ -1,7 +1,9 @@
 package app.shosetsu.tester
 
 import java.nio.file.Path
-import java.nio.file.StandardWatchEventKinds.*
+import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
+import java.nio.file.StandardWatchEventKinds.ENTRY_DELETE
+import java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY
 import java.nio.file.WatchKey
 import java.security.MessageDigest
 import kotlin.io.path.*
@@ -11,25 +13,32 @@ private val ByteArray.hex: String get() = fold("") { str, it -> str + "%02x".for
 private val sha256 = MessageDigest.getInstance("SHA-256")
 fun ByteArray.sha256sum(): String = sha256.digest(this).hex
 
-private const val cr = '\r'.code.toByte()
-private const val lf = '\n'.code.toByte()
+private const val CR = '\r'.code.toByte()
+private const val LF = '\n'.code.toByte()
 
 enum class LineEnding {
-	LF, CRLF, CR
+	LF,
+	CRLF,
+	CR,
 }
 
 fun ByteArray.detectLineEnding(): LineEnding {
 	return when {
-		size >= 2 && this[size - 2] == cr && this[size - 1] == lf -> LineEnding.CRLF
-		isNotEmpty() && this[size - 1] == lf -> LineEnding.LF
-		isNotEmpty() && this[size - 1] == cr -> LineEnding.CR
+		size >= 2 && this[size - 2] == CR && this[size - 1] == LF -> LineEnding.CRLF
+
+		isNotEmpty() && this[size - 1] == LF -> LineEnding.LF
+
+		isNotEmpty() && this[size - 1] == CR -> LineEnding.CR
+
 		else -> {
 			for (i in 0 until size - 1) {
 				when {
-					this[i] == lf -> return LineEnding.LF
+					this[i] == LF -> return LineEnding.LF
+
 					// cr cannot be last, since that would have been caught by the first when
-					this[i] == cr && this[i + 1] == lf -> return LineEnding.CRLF
-					this[i] == cr -> return LineEnding.CR
+					this[i] == CR && this[i + 1] == LF -> return LineEnding.CRLF
+
+					this[i] == CR -> return LineEnding.CR
 				}
 			}
 			return LineEnding.LF // if no line endings are present at all, we are probably good with LF
@@ -63,12 +72,16 @@ class DirectoryWatcher(vararg directories: Path) {
 				when (event.kind()) {
 					ENTRY_CREATE -> {
 						logger.info { "File created: $path" }
-						if (path.isDirectory()) keys[path.register(
-							watchService,
-							ENTRY_CREATE,
-							ENTRY_DELETE,
-							ENTRY_MODIFY
-						)] = path
+						if (path.isDirectory()) {
+							keys[
+								path.register(
+									watchService,
+									ENTRY_CREATE,
+									ENTRY_DELETE,
+									ENTRY_MODIFY,
+								),
+							] = path
+						}
 						paths.add(path)
 					}
 

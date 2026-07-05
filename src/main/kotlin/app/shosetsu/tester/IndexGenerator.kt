@@ -1,15 +1,18 @@
 package app.shosetsu.tester
 
 import app.shosetsu.lib.ExtensionType
-import app.shosetsu.lib.json.*
+import app.shosetsu.lib.json.RepoAuthor
+import app.shosetsu.lib.json.RepoExtension
+import app.shosetsu.lib.json.RepoIndex
+import app.shosetsu.lib.json.RepoLibrary
 import app.shosetsu.lib.lua.LuaExtension
 import app.shosetsu.lib.lua.LuaLibrary
+import java.nio.file.Path
+import java.util.TreeSet
+import kotlin.io.path.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
-import java.nio.file.Path
-import java.util.*
-import kotlin.io.path.*
 
 @OptIn(ExperimentalSerializationApi::class)
 private val writerJson = Json(RepoIndex.repositoryJsonParser) {
@@ -40,7 +43,7 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
 					name = it.nameWithoutExtension,
 					version = meta.libMetaData.version,
 					url = null,
-					hash = data.sha256sum()
+					hash = data.sha256sum(),
 				)
 			}
 			.filterNotNull()
@@ -70,14 +73,14 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
 					version = meta.exMetaData.version,
 					libVersion = meta.exMetaData.libVersion,
 					md5 = data.sha256sum(), // confusing, but we use sha256 for the hash
-					type = ExtensionType.LuaScript
+					type = ExtensionType.LuaScript,
 				)
 			}
 			.filterNotNull()
 			.sortedBy { it.id }
 			.toList(),
-		styles = emptyList(), //TODO: add styles
-		scripts = emptyList(), //TODO: add scripts
+		styles = emptyList(), // TODO: add styles
+		scripts = emptyList(), // TODO: add scripts
 		authors = authors.entries
 			.sortedBy { it.key }
 			.sortedByDescending { it.value.size }
@@ -85,9 +88,9 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
 				RepoAuthor(
 					id = it.key.hashCode(),
 					name = it.key,
-					description = "Worked on ${it.value.joinToString(", ")}"
+					description = "Worked on ${it.value.joinToString(", ")}",
 				)
-			}
+			},
 	)
 	if (illegalFileEndings.isNotEmpty()) {
 		logger.warn {
@@ -97,7 +100,7 @@ fun generateIndex(indexPath: Path, libraryPath: Path, scriptPath: Path) {
             This may have been caused by an outdated clone of the repository or an unsupported text editor.
             Please try to clone the repository again or use a different text editor.
             For further information, this may be helpful: https://stackoverflow.com/questions/10418975/how-to-change-line-ending-settings
-            """.trimIndent().trim()
+			""".trimIndent().trim()
 		}
 	}
 	indexPath.outputStream().use { writerJson.encodeToStream(index, it) }

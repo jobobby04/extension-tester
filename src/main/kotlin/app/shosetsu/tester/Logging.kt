@@ -19,4 +19,5 @@ fun System.Logger.info(message: () -> String) = this.log(System.Logger.Level.INF
 fun System.Logger.warn(message: () -> String) = this.log(System.Logger.Level.WARNING, message)
 fun System.Logger.error(message: () -> String) = this.log(System.Logger.Level.ERROR, message)
 
-fun System.Logger.error(e: Throwable, message: () -> String) = this.log(System.Logger.Level.ERROR, message, e)
+fun System.Logger.error(e: Throwable, message: () -> String) =
+	this.log(System.Logger.Level.ERROR, message, e)

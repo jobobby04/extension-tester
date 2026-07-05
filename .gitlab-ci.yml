@@ -35,6 +35,20 @@ build:
     paths:
       - build/libs/extension-tester.jar
 
+lint:
+  stage: test
+  allow_failure: true
+  script: gradle lint
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    reports:
+      codequality: build/reports/ktlint/ktlint.json
+
 #test:
 #  stage: test
 #  script: gradle check

@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import java.util.Stack
 import org.junit.Ignore
 import org.junit.Test
-import java.util.*
 
 /**
  * extension-tester

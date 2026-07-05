@@ -18,9 +18,9 @@
 
 import app.shosetsu.tester.main
 import app.shosetsu.tester.setupLogging
-import org.junit.Test
 import java.util.logging.Level
 import kotlin.time.ExperimentalTime
+import org.junit.Test
 
 /**
  * extension-tester
@@ -36,8 +36,8 @@ class ExtensionTesterTest {
 				"-r",
 				"../extensions/",
 				"../extensions/src/en/NovelFull.lua",
-				"../extensions/src/en/BoxNovel.lua"
-			)
+				"../extensions/src/en/BoxNovel.lua",
+			),
 		)
 	}
 }

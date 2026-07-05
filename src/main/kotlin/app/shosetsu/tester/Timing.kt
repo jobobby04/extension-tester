@@ -27,11 +27,10 @@ import kotlin.time.measureTimedValue
  */
 
 @ExperimentalTime
-inline fun <T> outputTimedValue(jobName: String, block: () -> T): T {
-	return measureTimedValue(block).also {
+inline fun <T> outputTimedValue(jobName: String, block: () -> T): T =
+	measureTimedValue(block).also {
 		printExecutionTime(jobName, it.duration)
 	}.value
-}
 
 @ExperimentalTime
 fun printExecutionTime(job: String, time: Duration) {

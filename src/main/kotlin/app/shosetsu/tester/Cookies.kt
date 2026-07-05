@@ -27,9 +27,7 @@ import okhttp3.HttpUrl
 object Cookies : CookieJar {
 	private val cookieJar = mutableMapOf<String, MutableList<Cookie>>()
 
-	override fun loadForRequest(url: HttpUrl): List<Cookie> {
-		return cookieJar[url.host].orEmpty()
-	}
+	override fun loadForRequest(url: HttpUrl): List<Cookie> = cookieJar[url.host].orEmpty()
 
 	override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
 		val list = cookieJar.getOrPut(url.host) { mutableListOf() }

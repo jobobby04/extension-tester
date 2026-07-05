@@ -32,7 +32,9 @@ fun validateRepository(repoIndex: RepoIndex) {
 			remove(extension)
 		}.forEach { otherExt ->
 			if (extension.id == otherExt.id) {
-				throw ExtensionTestException("Extension `${extension.name}` has the same id as `${otherExt.name}`: ${extension.id}")
+				throw ExtensionTestException(
+					"Extension `${extension.name}` has the same id as `${otherExt.name}`: ${extension.id}",
+				)
 			}
 		}
 		run {
@@ -40,7 +42,9 @@ fun validateRepository(repoIndex: RepoIndex) {
 			val extFile =
 				File("$DIRECTORY/src/${extension.lang}/${extension.fileName}.lua")
 			if (!extFile.exists()) {
-				throw ExtensionTestException("Extension `${extension.name}`(${extension.id}) is not in expected path: $extFile")
+				throw ExtensionTestException(
+					"Extension `${extension.name}`(${extension.id}) is not in expected path: $extFile",
+				)
 			}
 		}
 	}
@@ -65,7 +69,6 @@ fun validateRepository(repoIndex: RepoIndex) {
 					throw ExtensionTestException("Repo $repoLibrary is not in expected path: $extFile")
 				}
 			}
-
 		}
 	}
 
@@ -76,14 +79,18 @@ fun validateRepository(repoIndex: RepoIndex) {
 			remove(style)
 		}.forEach { otherStyle ->
 			if (style.id == otherStyle.id) {
-				throw ExtensionTestException("Style `${style.name}` has the same id as `${otherStyle.name}`: ${style.id}")
+				throw ExtensionTestException(
+					"Style `${style.name}` has the same id as `${otherStyle.name}`: ${style.id}",
+				)
 			}
 		}
 		run {
 			val extFile =
 				File("$DIRECTORY/styles/${style.fileName}.css")
 			if (!extFile.exists()) {
-				throw ExtensionTestException("Style `${style.name}`(${style.id}) is not in expected path: $extFile")
+				throw ExtensionTestException(
+					"Style `${style.name}`(${style.id}) is not in expected path: $extFile",
+				)
 			}
 		}
 	}

@@ -62,8 +62,11 @@ version = System.getenv("CI_COMMIT_TAG")?.trimStart('v') ?: Git.open(projectDir)
 }
 
 repositories {
-	maven("https://gitlab.com/api/v4/groups/12585416/-/packages/maven") {
-		content {
+	exclusiveContent {
+		forRepository {
+			maven("https://gitlab.com/api/v4/groups/12585416/-/packages/maven")
+		}
+		filter {
 			includeGroupAndSubgroups("app.shosetsu")
 		}
 	}

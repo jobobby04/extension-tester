@@ -455,14 +455,13 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	)
 
 	// Test each top-level listing
-	fun getListingItem(listing: Extension.Listing): Extension.Listing? =
-		when (listing.novels) {
-			is Extension.Listing.Novels -> listing
+	fun getListingItem(listing: Extension.Listing): Extension.Listing? = when (listing.novels) {
+		is Extension.Listing.Novels -> listing
 
-			else -> listing.listings?.get()?.firstNotNullOfOrNull { l ->
-				getListingItem(l)
-			}
+		else -> listing.listings?.get()?.firstNotNullOfOrNull { l ->
+			getListingItem(l)
 		}
+	}
 
 	val listingItem = getListingItem(extension.getListing(null))
 	if (listingItem != null) {

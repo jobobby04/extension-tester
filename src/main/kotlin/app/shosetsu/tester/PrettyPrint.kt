@@ -22,7 +22,6 @@ package app.shosetsu.tester
  * 08 / 11 / 2021
  */
 fun Any.prettyPrint(): String {
-
 	var indentLevel = 0
 	val indentWidth = 4
 

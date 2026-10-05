@@ -84,10 +84,13 @@ buildConfig {
 	buildConfigField("VERSION", version.toString())
 }
 
+val ktlint by configurations.registering
+
 dependencies {
 	testImplementation(kotlin("test"))
 
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 	implementation("com.github.ajalt.clikt:clikt:5.1.0") // for CLI
 
 	implementation("app.shosetsu.lib:kotlin-lib:1.4.1+listing-stringly-SNAPSHOT")
@@ -96,6 +99,11 @@ dependencies {
 	implementation("org.jsoup:jsoup:1.22.1")
 	implementation("com.squareup.okhttp3:okhttp:5.3.2")
 	implementation("org.luaj:luaj-jse:3.0.1")
+
+	ktlint("com.pinterest.ktlint:ktlint-cli:1.8.0")
+	ktlint("io.github.tobi2k:ktlint-gitlab-reporter:2.0.1")
+
+	testImplementation(kotlin("test"))
 }
 
 tasks.test {
@@ -169,4 +177,38 @@ val deploy by tasks.registering {
 	group = "publishing"
 	description = "Performs the tasks necessary to deploy the library"
 	dependsOn(tasks.publish)
+}
+
+val outputDir = project.layout.buildDirectory.dir("reports/ktlint/")
+val inputFiles = fileTree("src") { include("**/*.kt") }
+val editorconfig = rootProject.file(".editorconfig").absolutePath
+
+tasks {
+	val ktlintRun by registering(JavaExec::class) {
+		group = "verification"
+		inputs.files(inputFiles)
+		outputs.dir(outputDir)
+		mainClass = "com.pinterest.ktlint.Main"
+		classpath(ktlint)
+		args = listOf("--editorconfig=$editorconfig", "src/**/*.kt", "--reporter=plain?group_by_file", "--reporter=gitlab,output=${outputDir.get().asFile.absolutePath}/ktlint.json")
+		jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+	}
+
+	val ktlintFormat by registering(JavaExec::class) {
+		group = "verification"
+		inputs.files(inputFiles)
+		outputs.dir(outputDir)
+		mainClass = "com.pinterest.ktlint.Main"
+		classpath(ktlint)
+		args = listOf("--editorconfig=$editorconfig", "-F", "src/**/*.kt")
+		jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+	}
+
+	val lint by registering {
+		group = "verification"
+		dependsOn(ktlintRun)
+	}
+
+	check { dependsOn(lint) }
+	compileKotlin { dependsOn(ktlintFormat) }
 }

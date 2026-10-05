@@ -1,8 +1,13 @@
-import app.shosetsu.lib.json.*
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.decodeFromStream
+import app.shosetsu.lib.json.RepoAuthor
+import app.shosetsu.lib.json.RepoExtension
+import app.shosetsu.lib.json.RepoIndex
+import app.shosetsu.lib.json.RepoJavaScript
+import app.shosetsu.lib.json.RepoLibrary
+import app.shosetsu.lib.json.RepoStyle
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.decodeFromStream
 
 @OptIn(ExperimentalSerializationApi::class)
 fun main(args: Array<String>) {
@@ -10,8 +15,12 @@ fun main(args: Array<String>) {
 		println("Usage: DiffKt <old-index> <new-index>")
 		return
 	}
-	val oldIndex: RepoIndex = Path(args[0]).inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
-	val newIndex: RepoIndex = Path(args[1]).inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
+	val oldIndex: RepoIndex = Path(
+		args[0],
+	).inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
+	val newIndex: RepoIndex = Path(
+		args[1],
+	).inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
 	println(diff(oldIndex, newIndex))
 }
 
@@ -25,7 +34,7 @@ fun diff(left: RepoIndex, right: RepoIndex) = buildString {
 		appendLine("  Authors differ:")
 		appendLine(
 			diffAuthors(left.authors.associateBy { it.id }, right.authors.associateBy { it.id }).trimEnd()
-				.prependIndent("    ")
+				.prependIndent("    "),
 		)
 	}
 	if (left.libraries.toSet() != right.libraries.toSet()) {
@@ -33,7 +42,8 @@ fun diff(left: RepoIndex, right: RepoIndex) = buildString {
 		appendLine(
 			diffLibrarys(
 				left.libraries.associateBy { it.name },
-				right.libraries.associateBy { it.name }).trimEnd().prependIndent("    ")
+				right.libraries.associateBy { it.name },
+			).trimEnd().prependIndent("    "),
 		)
 	}
 	if (left.extensions.toSet() != right.extensions.toSet()) {
@@ -41,21 +51,22 @@ fun diff(left: RepoIndex, right: RepoIndex) = buildString {
 		appendLine(
 			diffExtensions(
 				left.extensions.associateBy { it.id },
-				right.extensions.associateBy { it.id }).trimEnd().prependIndent("    ")
+				right.extensions.associateBy { it.id },
+			).trimEnd().prependIndent("    "),
 		)
 	}
 	if (left.styles.toSet() != right.styles.toSet()) {
 		appendLine("  Styles differ:")
 		appendLine(
 			diffStyles(left.styles.associateBy { it.id }, right.styles.associateBy { it.id }).trimEnd()
-				.prependIndent("    ")
+				.prependIndent("    "),
 		)
 	}
 	if (left.scripts.toSet() != right.scripts.toSet()) {
 		appendLine("  Scripts differ:")
 		appendLine(
 			diffScripts(left.scripts.associateBy { it.id }, right.scripts.associateBy { it.id }).trimEnd()
-				.prependIndent("    ")
+				.prependIndent("    "),
 		)
 	}
 }

@@ -17,6 +17,7 @@
  */
 package app.shosetsu.tester
 
+import app.shosetsu.lib.ShosetsuSharedLib
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
 import app.shosetsu.lib.lua.ShosetsuLuaLib
@@ -33,11 +34,6 @@ import com.github.ajalt.clikt.core.main
 import com.sun.net.httpserver.Filter
 import com.sun.net.httpserver.HttpServer
 import com.sun.net.httpserver.SimpleFileServer
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
-import okhttp3.OkHttpClient
-import org.luaj.vm2.LuaValue
 import java.io.File
 import java.net.InetSocketAddress
 import java.time.OffsetDateTime
@@ -45,6 +41,11 @@ import java.time.format.DateTimeFormatter
 import kotlin.io.path.*
 import kotlin.system.exitProcess
 import kotlin.time.ExperimentalTime
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import okhttp3.OkHttpClient
+import org.luaj.vm2.LuaValue
 
 /*
  * shosetsu-services
@@ -76,17 +77,27 @@ fun setupLibs() {
 		outputTimedValue("loadScript") {
 			@Suppress("CheckedExceptionsKotlin")
 			loadScript(
-				File("$DIRECTORY/lib/$it.lua")
+				File("$DIRECTORY/lib/$it.lua"),
 			)
 		}
 	}
 	httpClient = OkHttpClient.Builder().cookieJar(Cookies).addInterceptor {
 		outputTimedValue("Time till response") {
-			it.proceed(it.request().also { request ->
-				logger.debug { request.url.toUrl().toString() }
-			})
+			it.proceed(
+				it.request().also { request ->
+					logger.debug { request.url.toUrl().toString() }
+				},
+			)
 		}
-	}.build()
+	}.addInterceptor(
+		CloudflareInterceptor {
+			ShosetsuSharedLib.shosetsuHeaders = ShosetsuSharedLib
+				.shosetsuHeaders
+				.filterNot { it.first.equals("User-Agent", true) }
+				.plus("User-Agent" to it)
+				.toTypedArray()
+		}
+	).build()
 }
 
 @ExperimentalTime
@@ -99,25 +110,25 @@ fun main(args: Array<String>) {
 		exitProcess(1)
 	}
 
-    if (HOST) {
-        logger.info { "Hosting directory on http://localhost:8000" }
-        val formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z")
-        fun dateTime() = OffsetDateTime.now().format(formatter)
-        HttpServer.create(
-            InetSocketAddress(8000),
-            0,
-            "/",
-            SimpleFileServer.createFileHandler(Path(".").absolute()),
-            Filter.afterHandler("HttpExchange OutputFilter") {
-                logger.info {
-                    // https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format
-                    val prefix = "${it.remoteAddress.hostString} - - [${dateTime()}]"
-                    val main = "${it.requestMethod} ${it.requestURI} ${it.protocol}"
-                    "$prefix \"$main\" ${it.responseCode} -"
-                }
-            }
-        ).start()
-    }
+	if (HOST) {
+		logger.info { "Hosting directory on http://localhost:8000" }
+		val formatter = DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z")
+		fun dateTime() = OffsetDateTime.now().format(formatter)
+		HttpServer.create(
+			InetSocketAddress(8000),
+			0,
+			"/",
+			SimpleFileServer.createFileHandler(Path(".").absolute()),
+			Filter.afterHandler("HttpExchange OutputFilter") {
+				logger.info {
+					// https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format
+					val prefix = "${it.remoteAddress.hostString} - - [${dateTime()}]"
+					val main = "${it.requestMethod} ${it.requestURI} ${it.protocol}"
+					"$prefix \"$main\" ${it.responseCode} -"
+				}
+			},
+		).start()
+	}
 
 	if (WATCH) {
 		logger.info { "Watching for changes" }
@@ -142,9 +153,15 @@ private fun performIteration(predicate: (String) -> Boolean = { true }): Boolean
 				generateIndex(indexPath, DIRECTORY / "lib", DIRECTORY / "src")
 			}
 
-			val repoIndex: RepoIndex = indexPath.inputStream().use(RepoIndex.repositoryJsonParser::decodeFromStream)
+			val repoIndex: RepoIndex = indexPath.inputStream().use(
+				RepoIndex.repositoryJsonParser::decodeFromStream,
+			)
 
-			if (PRINT_REPO_INDEX) logger.info { outputTimedValue("RepoIndexLoad") { repoIndex.prettyPrint() } }
+			if (PRINT_REPO_INDEX) {
+				logger.info {
+					outputTimedValue("RepoIndexLoad") { repoIndex.prettyPrint() }
+				}
+			}
 
 			if (VALIDATE_INDEX) validateRepository(repoIndex)
 

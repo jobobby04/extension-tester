@@ -76,7 +76,7 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 }
 
 @ExperimentalTime
-fun showNovel(ext: IExtension, novelURL: String) {
+fun showNovel(ext: Extension, novelURL: String) {
 	val novel = outputTimedValue("ext.parseNovel") {
 		ext.parseNovel(novelURL, true)
 	}
@@ -117,7 +117,7 @@ fun showNovel(ext: IExtension, novelURL: String) {
 
 @Throws(Exception::class)
 @ExperimentalTime
-fun showListing(ext: IExtension, novels: Array<Novel.Info>) {
+fun showListing(ext: Extension, novels: Array<Novel.Info>) {
 	if (PRINT_LISTINGS) {
 		logger.info { (novels.joinToString(", ") { it.toString() }) }
 	}
@@ -238,8 +238,12 @@ fun testListing(extension: Extension, l: Extension.Listing) {
 	with(novelsListing) {
 		logger.info {
 			"\n-------- Listing \"${l.name}\" " +
-					if (isIncrementing) "(incrementing)" else "" +
-							" --------"
+				if (isIncrementing) {
+					"(incrementing)"
+				} else {
+					"" +
+						" --------"
+				}
 		}
 
 		val searchFiltersModel: Map<Int, *> =
@@ -250,28 +254,29 @@ fun testListing(extension: Extension, l: Extension.Listing) {
 
 		var novels = get(
 			HashMap(searchFiltersModel),
-			extension.startIndex
+			extension.startIndex,
 		)
 
-		if (isIncrementing)
+		if (isIncrementing) {
 			novels += get(
 				HashMap(searchFiltersModel),
-				extension.startIndex + 1
+				extension.startIndex + 1,
 			)
+		}
 
 		if (Config.REPEAT) {
 			novels = get(
 				HashMap(searchFiltersModel),
-				extension.startIndex
+				extension.startIndex,
 			)
 
-			if (isIncrementing)
+			if (isIncrementing) {
 				novels += get(
 					HashMap(searchFiltersModel),
-					extension.startIndex + 1
+					extension.startIndex + 1,
 				)
+			}
 		}
-
 
 		showListing(extension, novels)
 
@@ -285,7 +290,7 @@ fun testListing(extension: Extension, l: Extension.Listing) {
 }
 
 @OptIn(ExperimentalTime::class)
-fun searchListing(extension: IExtension, l: Extension.Listing) {
+fun searchListing(extension: Extension, l: Extension.Listing) {
 	val search = l.search ?: return
 	logger.info { "\n-------- Search --------" }
 
@@ -302,18 +307,25 @@ fun searchListing(extension: IExtension, l: Extension.Listing) {
 
 		when (filter) {
 			is Filter.Checkbox -> filter.state = state.toBooleanStrict()
+
 			is Filter.Dropdown -> filter.state = state.toInt()
+
 			is Filter.Password -> filter.state = state
+
 			is Filter.RadioGroup -> filter.state = state.toInt()
+
 			is Filter.Switch -> filter.state = state.toBooleanStrict()
+
 			is Filter.Text -> filter.state = state
+
 			is Filter.TriState -> filter.state = state.toInt()
 
 			is Filter.FList,
 			is Filter.Group<*>,
 			is Filter.Header,
 			Filter.Separator,
-			null -> Unit
+			null,
+			-> Unit
 		}
 	}
 
@@ -326,9 +338,9 @@ fun searchListing(extension: IExtension, l: Extension.Listing) {
 				HashMap(searchFiltersModel).apply {
 					putAll(filtersChanged)
 				},
-				extension.startIndex
+				extension.startIndex,
 			) ?: arrayOf()
-		}
+		},
 	)
 	if (search.isIncrementing) {
 		showListing(
@@ -339,9 +351,9 @@ fun searchListing(extension: IExtension, l: Extension.Listing) {
 					HashMap(searchFiltersModel).apply {
 						putAll(filtersChanged)
 					},
-					extension.startIndex + 1
+					extension.startIndex + 1,
 				) ?: arrayOf()
-			}
+			},
 		)
 	}
 }
@@ -377,7 +389,6 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 		} catch (e: Exception) {
 			logger.error(e) { "Failed to test listing: $SPECIFIC_LISTING_URL, invalid url" }
 		}
-		val listing = runCatching { extension.getListing(SPECIFIC_LISTING_URL) }.getOrNull()
 		return
 	}
 
@@ -444,14 +455,14 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	)
 
 	// Test each top-level listing
-	fun getListingItem(listing: Extension.Listing): Extension.Listing? {
-		return when (val novels = listing.novels) {
+	fun getListingItem(listing: Extension.Listing): Extension.Listing? =
+		when (listing.novels) {
 			is Extension.Listing.Novels -> listing
+
 			else -> listing.listings?.get()?.firstNotNullOfOrNull { l ->
 				getListingItem(l)
 			}
 		}
-	}
 
 	val listingItem = getListingItem(extension.getListing(null))
 	if (listingItem != null) {

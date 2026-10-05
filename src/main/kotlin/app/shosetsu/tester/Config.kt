@@ -130,7 +130,7 @@ object Config : CliktCommand() {
 	 */
 	val SPECIFIC_LISTING_URL by option(
 		"--target-listing",
-		help = "Target a specific Listing"
+		help = "Target a specific Listing",
 	).default("")
 
 	val SPECIFIC_NOVEL_URL by option(

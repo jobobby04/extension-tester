@@ -96,7 +96,7 @@ fun setupLibs() {
 				.filterNot { it.first.equals("User-Agent", true) }
 				.plus("User-Agent" to it)
 				.toTypedArray()
-		}
+		},
 	).build()
 }
 

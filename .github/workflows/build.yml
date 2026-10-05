@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "listing-stringly" ]
 
 jobs:
   build:
@@ -27,5 +27,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: ${{ github.event_name == 'push' }}
       with:
-        tag_name:  ${{ github.run_number }}
+        tag_name: listing-stringly
         files: build/libs/extension-tester.jar
+        make_latest: false

@@ -222,10 +222,11 @@ fun verifyImageLoad(
 }
 
 @OptIn(ExperimentalTime::class)
-fun testListing(extension: IExtension, l: IExtension.Listing.Item) {
-	with(l) {
+fun testListing(extension: Extension, l: Extension.Listing) {
+	val novelsListing = l.novels!!
+	with(novelsListing) {
 		logger.info {
-			"\n-------- Listing \"${name}\" " +
+			"\n-------- Listing \"${l.name}\" " +
 					if (isIncrementing) "(incrementing)" else "" +
 							" --------"
 		}
@@ -236,25 +237,25 @@ fun testListing(extension: IExtension, l: IExtension.Listing.Item) {
 				it.printOut()
 			}.mapify()
 
-		var novels = l.getListing(
+		var novels = get(
 			HashMap(searchFiltersModel),
 			extension.startIndex
 		)
 
 		if (isIncrementing)
-			novels += l.getListing(
+			novels += get(
 				HashMap(searchFiltersModel),
 				extension.startIndex + 1
 			)
 
 		if (Config.REPEAT) {
-			novels = l.getListing(
+			novels = get(
 				HashMap(searchFiltersModel),
 				extension.startIndex
 			)
 
 			if (isIncrementing)
-				novels += l.getListing(
+				novels += get(
 					HashMap(searchFiltersModel),
 					extension.startIndex + 1
 				)
@@ -273,7 +274,7 @@ fun testListing(extension: IExtension, l: IExtension.Listing.Item) {
 }
 
 @OptIn(ExperimentalTime::class)
-fun searchListing(extension: IExtension, l: IExtension.Listing) {
+fun searchListing(extension: IExtension, l: Extension.Listing) {
 	val search = l.search ?: return
 	logger.info { "\n-------- Search --------" }
 
@@ -359,12 +360,13 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	}
 
 	if (SPECIFIC_LISTING_URL.isNotBlank()) {
-		val listing = extension.getListing(SPECIFIC_LISTING_URL) as? IExtension.Listing.Item
-		if (listing != null) {
+		try {
+			val listing = extension.getListing(SPECIFIC_LISTING_URL)
 			testListing(extension, listing)
-		} else {
-			logger.error { "Failed to test listing: $listing, invalid url" }
+		} catch (e: Exception) {
+			logger.error(e) { "Failed to test listing: $SPECIFIC_LISTING_URL, invalid url" }
 		}
+		val listing = runCatching { extension.getListing(SPECIFIC_LISTING_URL) }.getOrNull()
 		return
 	}
 
@@ -430,10 +432,10 @@ fun testExtension(repoIndex: RepoIndex, extensionPath: Pair<String, ExtensionTyp
 	)
 
 	// Test each top-level listing
-	fun getListingItem(listing: IExtension.Listing): IExtension.Listing.Item? {
-		return when (listing) {
-			is IExtension.Listing.Item -> listing
-			is IExtension.Listing.List -> listing.getListings().firstNotNullOfOrNull { l ->
+	fun getListingItem(listing: Extension.Listing): Extension.Listing? {
+		return when (val novels = listing.novels) {
+			is Extension.Listing.Novels -> listing
+			else -> listing.listings?.get()?.firstNotNullOfOrNull { l ->
 				getListingItem(l)
 			}
 		}

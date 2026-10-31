@@ -20,8 +20,8 @@ package app.shosetsu.tester
 import app.shosetsu.lib.ShosetsuSharedLib
 import app.shosetsu.lib.ShosetsuSharedLib.httpClient
 import app.shosetsu.lib.json.RepoIndex
+import app.shosetsu.lib.lua.LuaLibrary
 import app.shosetsu.lib.lua.ShosetsuLuaLib
-import app.shosetsu.lib.lua.shosetsuGlobals
 import app.shosetsu.tester.Config.CI_MODE
 import app.shosetsu.tester.Config.DIRECTORY
 import app.shosetsu.tester.Config.GENERATE_INDEX
@@ -45,7 +45,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
-import org.luaj.vm2.LuaValue
 
 /*
  * shosetsu-services
@@ -56,30 +55,13 @@ import org.luaj.vm2.LuaValue
 
 val json = Json { prettyPrint = true }
 
-private val globals = shosetsuGlobals()
-
-@Throws(Exception::class)
-private fun loadScript(file: File): LuaValue {
-	val l = try {
-		globals.load(file.readText(), "lib(${file.name})")!!
-	} catch (e: Exception) {
-		throw e
-	}
-	return l.call()!!
-}
-
 /**
  * Establish
  */
 @ExperimentalTime
 fun setupLibs() {
 	ShosetsuLuaLib.libLoader = {
-		outputTimedValue("loadScript") {
-			@Suppress("CheckedExceptionsKotlin")
-			loadScript(
-				File("$DIRECTORY/lib/$it.lua"),
-			)
-		}
+		LuaLibrary(File("$DIRECTORY/lib/$it.lua").readText())
 	}
 	httpClient = OkHttpClient.Builder().cookieJar(Cookies).addInterceptor {
 		outputTimedValue("Time till response") {

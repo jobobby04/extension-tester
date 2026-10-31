@@ -46,7 +46,7 @@ fun List<Filter<*>>.printOut(indent: Int = 0) {
 		val fName = filter.name
 
 		val tabs = StringBuilder("\t").apply {
-			for (i in 0 until indent) {
+			repeat(indent) {
 				this.append("\t")
 			}
 		}
@@ -246,33 +246,23 @@ fun testListing(extension: Extension, l: Extension.Listing) {
 				}
 		}
 
-		val searchFiltersModel: Map<Int, *> =
-			l.search?.filters.orEmpty().toList().also {
-				logger.info { "SearchFilters Model:" }
-				it.printOut()
-			}.mapify()
-
 		var novels = get(
-			HashMap(searchFiltersModel),
 			extension.startIndex,
 		)
 
 		if (isIncrementing) {
 			novels += get(
-				HashMap(searchFiltersModel),
 				extension.startIndex + 1,
 			)
 		}
 
 		if (Config.REPEAT) {
 			novels = get(
-				HashMap(searchFiltersModel),
 				extension.startIndex,
 			)
 
 			if (isIncrementing) {
 				novels += get(
-					HashMap(searchFiltersModel),
 					extension.startIndex + 1,
 				)
 			}
@@ -339,7 +329,7 @@ fun searchListing(extension: Extension, l: Extension.Listing) {
 					putAll(filtersChanged)
 				},
 				extension.startIndex,
-			) ?: arrayOf()
+			)
 		},
 	)
 	if (search.isIncrementing) {
@@ -352,7 +342,7 @@ fun searchListing(extension: Extension, l: Extension.Listing) {
 						putAll(filtersChanged)
 					},
 					extension.startIndex + 1,
-				) ?: arrayOf()
+				)
 			},
 		)
 	}
